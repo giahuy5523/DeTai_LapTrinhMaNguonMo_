@@ -21,9 +21,17 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="#">Trang chủ</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#">Sản phẩm</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#">Giỏ hàng</a></li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url('/') }}">Trang chủ</a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('store.index') }}">Sản phẩm</a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ route('cart.index') }}">Giỏ hàng</a>
+                    </li>
                     <!-- Chỗ này Tuấn sẽ code hiển thị Tên User/Login/Logout sau -->
                 </ul>
             </div>
