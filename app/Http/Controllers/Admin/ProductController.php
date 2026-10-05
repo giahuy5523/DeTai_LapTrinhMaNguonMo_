@@ -9,12 +9,21 @@ use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
-    // 1. Hiển thị danh sách Sản phẩm
-    public function index()
+    
+    // 1. Hiển thị danh sách Sản phẩm (kèm Tìm kiếm & Phân trang)
+    public function index(Request $request)
     {
-        // Dùng with('category') để lấy luôn tên danh mục, tránh lỗi N+1 query
-        $products = Product::with('category')->latest()->paginate(10);
-        return view('admin.products.index', compact('products'));
+        $keyword = $request->input('keyword');
+
+        // Lấy danh sách sản phẩm kèm danh mục, lọc theo tên nếu có từ khóa
+        $products = Product::with('category')
+            ->when($keyword, function ($query, $keyword) {
+                return $query->where('name', 'like', '%' . $keyword . '%');
+            })
+            ->latest()
+            ->paginate(5); // Bạn có thể chỉnh 5 thành số sản phẩm hiển thị trên 1 trang (ví dụ 10)
+
+        return view('admin.products.index', compact('products', 'keyword'));
     }
 
     // 2. Trả về form Thêm mới Sản phẩm
