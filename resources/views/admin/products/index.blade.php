@@ -14,7 +14,18 @@
     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
 </div>
 @endif
-
+<!-- Form Tìm kiếm -->
+    <form action="{{ route('admin.products.index') }}" method="GET" class="mb-3 d-flex gap-2">
+        <input type="text" 
+               name="keyword" 
+               value="{{ request('keyword') }}" 
+               class="form-control w-25" 
+               placeholder="Nhập tên sản phẩm cần tìm...">
+        <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+        @if(request('keyword'))
+            <a href="{{ route('admin.products.index') }}" class="btn btn-outline-secondary">Xóa lọc</a>
+        @endif
+    </form>
 <div class="card">
     <div class="card-body">
         <table class="table table-bordered table-hover align-middle">
@@ -63,7 +74,10 @@
                 @endforelse
             </tbody>
         </table>
-
+<!-- Thanh Phân Trang -->
+            <div class="d-flex justify-content-end mt-3">
+                {{ $products->appends(request()->all())->links() }}
+            </div>
         <div class="mt-3">
             {{ $products->links() }}
         </div>
