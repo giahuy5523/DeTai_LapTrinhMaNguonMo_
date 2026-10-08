@@ -2,16 +2,14 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Shop Giày Thể Thao')</title>
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Thêm CSS tùy chỉnh của dự án ở đây -->
-    <style>
-        /* CSS reset & base */
-    </style>
+    <title>Admin Layout</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
+ feature/auth-user
+    <nav class="navbar navbar-dark bg-dark p-2">
+        <a class="navbar-brand" href="{{ route('admin.dashboard') }}">Admin Panel</a>
+
     <!-- Navbar chung -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
@@ -36,21 +34,16 @@
                 </ul>
             </div>
         </div>
+ develop
     </nav>
 
-    <!-- Main Content: Các view con sẽ chèn nội dung vào đây -->
-    <main class="container my-5">
+    <div class="container mt-4">
         @yield('content')
-    </main>
+    </div>
 
-    <!-- Footer chung -->
-    <footer class="bg-dark text-white text-center py-3 mt-auto">
-        <p class="mb-0">&copy; 2026 SneakerShop - Đồ án Lập trình mã nguồn mở</p>
+    <footer class="text-center mt-4">
+        <hr>
+        <p>&copy; {{ date('Y') }} SneakerShop Admin</p>
     </footer>
-
-    <!-- Bootstrap 5 JS Bundle -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Thêm jQuery hoặc JS tùy chỉnh (cho Trọng dùng AJAX giỏ hàng) -->
-    @stack('scripts')
 </body>
 </html>

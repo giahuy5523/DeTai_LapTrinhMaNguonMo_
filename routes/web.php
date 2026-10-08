@@ -7,6 +7,33 @@ use App\Http\Controllers\StoreController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\ProductController;
+feature/auth-user
+use App\Http\Controllers\AuthController;
+
+// --- TRANG CHỦ ---
+Route::get('/', function () {
+    return view('welcome');
+});
+
+// --- ROUTES XÁC THỰC (AUTH) ---
+Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
+Route::post('/login', [AuthController::class, 'login']);
+Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+// --- NHÓM ROUTE DÀNH RIÊNG CHO ADMIN (Yêu cầu phải đăng nhập & có quyền Admin) ---
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(function () {
+    // Dashboard Admin
+    Route::get('/dashboard', function () {
+        return view('admin.dashboard');
+    })->name('dashboard');
+
+    // Quản lý Danh mục & Sản phẩm
+    Route::resource('categories', CategoryController::class);
+    Route::resource('products', ProductController::class);
+});
+
 use App\Http\Controllers\Admin\OrderController;
 
 // Khách hàng
@@ -30,3 +57,4 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
     Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
 });
+ develop
