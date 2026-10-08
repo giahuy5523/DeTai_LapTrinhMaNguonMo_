@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Admin SneakerShop',
             'email' => 'admin@gmail.com',
             'password' => bcrypt('12345678'), // Mật khẩu mã hóa
+            'role' => 'admin', // thêm dòng này
         ]);
 
         // 2. Tạo sẵn vài Danh mục mẫu cho nhóm
