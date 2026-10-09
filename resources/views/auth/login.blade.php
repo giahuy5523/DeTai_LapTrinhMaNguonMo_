@@ -65,8 +65,4 @@
 </div>
 
 </body>
- feature/auth-user
 </html>
-
-</html>
- develop
