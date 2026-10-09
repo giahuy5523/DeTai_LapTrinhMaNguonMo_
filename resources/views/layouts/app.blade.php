@@ -8,6 +8,7 @@
 <body>
     <nav class="navbar navbar-dark bg-dark p-2">
         <a class="navbar-brand" href="{{ route('admin.dashboard') }}">Admin Panel</a>
+    </nav>
 
     <!-- Navbar chung -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
