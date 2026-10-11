@@ -1,8 +1,8 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', 'Quản lý Sản phẩm')
 
-@section('content')
+@section('admin-content')
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Danh sách Sản phẩm</h2>
     <a href="{{ route('admin.products.create') }}" class="btn btn-primary">Thêm mới</a>
@@ -16,10 +16,10 @@
 @endif
 <!-- Form Tìm kiếm -->
     <form action="{{ route('admin.products.index') }}" method="GET" class="mb-3 d-flex gap-2">
-        <input type="text" 
-               name="keyword" 
-               value="{{ request('keyword') }}" 
-               class="form-control w-25" 
+        <input type="text"
+               name="keyword"
+               value="{{ request('keyword') }}"
+               class="form-control" aria-label="Tên sản phẩm cần tìm"
                placeholder="Nhập tên sản phẩm cần tìm...">
         <button type="submit" class="btn btn-primary">Tìm kiếm</button>
         @if(request('keyword'))
@@ -28,7 +28,7 @@
     </form>
 <div class="card">
     <div class="card-body">
-        <table class="table table-bordered table-hover align-middle">
+        <div class="table-responsive"><table class="table table-bordered table-hover align-middle">
             <thead class="table-dark">
                 <tr>
                     <th>ID</th>
@@ -73,14 +73,12 @@
                 </tr>
                 @endforelse
             </tbody>
-        </table>
+        </table></div>
 <!-- Thanh Phân Trang -->
             <div class="d-flex justify-content-end mt-3">
                 {{ $products->appends(request()->all())->links() }}
             </div>
-        <div class="mt-3">
-            {{ $products->links() }}
-        </div>
+
     </div>
 </div>
 @endsection

@@ -1,8 +1,8 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', 'Sửa Sản phẩm')
 
-@section('content')
+@section('admin-content')
 <div class="row justify-content-center">
     <div class="col-md-8">
         <div class="card">
@@ -13,7 +13,7 @@
                 <form action="{{ route('admin.products.update', $product) }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
-                    
+
                     <div class="mb-3">
                         <label class="form-label fw-bold">Danh mục <span class="text-danger">*</span></label>
                         <select name="category_id" class="form-select @error('category_id') is-invalid @enderror">
@@ -47,7 +47,7 @@
                         <label class="form-label fw-bold">Ảnh đại diện mới (Bỏ trống nếu giữ nguyên)</label>
                         <input type="file" name="image" class="form-control @error('image') is-invalid @enderror" accept="image/*">
                         @error('image') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                        
+
                         @if($product->image)
                             <div class="mt-2">
                                 <span class="text-muted d-block mb-1">Ảnh hiện tại:</span>

@@ -11,7 +11,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // 1. Tạo tài khoản Admin mẫu cho Tuấn test
-        User::create([
+        User::firstOrCreate(['email' => 'admin@gmail.com'], [
             'name' => 'Admin SneakerShop',
             'email' => 'admin@gmail.com',
             'password' => bcrypt('12345678'), // Mật khẩu mã hóa
@@ -19,13 +19,13 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // 2. Tạo sẵn vài Danh mục mẫu cho nhóm
-        Category::create([
+        Category::firstOrCreate(['slug' => 'nike'], [
             'name' => 'Nike',
             'slug' => 'nike',
             'description' => 'Thương hiệu giày Nike'
         ]);
         
-        Category::create([
+        Category::firstOrCreate(['slug' => 'adidas'], [
             'name' => 'Adidas',
             'slug' => 'adidas',
             'description' => 'Thương hiệu giày Adidas'

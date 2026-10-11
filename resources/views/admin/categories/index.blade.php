@@ -1,8 +1,8 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', 'Quản lý Danh mục')
 
-@section('content')
+@section('admin-content')
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Danh sách Danh mục</h2>
     <a href="{{ route('admin.categories.create') }}" class="btn btn-primary">Thêm mới</a>
@@ -18,7 +18,7 @@
 
 <div class="card">
     <div class="card-body">
-        <table class="table table-bordered table-hover">
+        <div class="table-responsive"><table class="table table-bordered table-hover">
             <thead class="table-dark">
                 <tr>
                     <th>ID</th>
@@ -53,7 +53,7 @@
                 </tr>
                 @endforelse
             </tbody>
-        </table>
+        </table></div>
 
         <!-- Phân trang -->
         <div class="mt-3">
