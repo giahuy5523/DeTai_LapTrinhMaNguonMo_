@@ -34,16 +34,6 @@ Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('regi
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-
-// --- NHÓM ROUTE ADMIN ---
-Route::prefix('admin')->name('admin.')->middleware(['auth','admin'])->group(function () {
-    Route::get('/dashboard', function () {
-        return view('admin.dashboard');
-    })->name('dashboard');
-
-    Route::resource('categories', CategoryController::class);
-    Route::resource('products', ProductController::class);
-
 // --- NHÓM ROUTE DÀNH RIÊNG CHO ADMIN (Yêu cầu phải đăng nhập & có quyền Admin) ---
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(function () {
     // Dashboard Admin
