@@ -37,10 +37,15 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
         return view('admin.dashboard');
     })->name('dashboard');
 
+    Route::middleware(['auth','customer'])->group(function () {
+    Route::get('/gio-hang', [CartController::class, 'index'])->name('cart.index');
+    Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
+
     // Quản lý Danh mục, Sản phẩm, Đơn hàng
     Route::resource('categories', CategoryController::class);
     Route::resource('products', ProductController::class);
     Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
     Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
+    
 });
 
