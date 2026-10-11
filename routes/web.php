@@ -37,8 +37,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Quản lý Danh mục, Sản phẩm, Đơn hàng
-    Route::resource('categories', CategoryController::class);
-    Route::resource('products', ProductController::class);
+    Route::resource('categories', CategoryController::class)->except(['show']);
+    Route::resource('products', ProductController::class)->except(['show']);
     Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
     Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.updateStatus');
 });

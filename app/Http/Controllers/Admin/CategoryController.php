@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
 
 class CategoryController extends Controller
@@ -26,10 +27,19 @@ class CategoryController extends Controller
     public function store(Request $request)
     {
         $request->validate([
+            'description' => 'nullable|string',
             'name' => 'required|string|max:255|unique:categories,name',
         ], [
             'name.required' => 'Tên danh mục không được để trống.',
             'name.unique' => 'Tên danh mục này đã tồn tại.',
+        ]);
+
+        $request->merge(['slug' => \Illuminate\Support\Str::slug($request->name)]);
+        $request->validate([
+            'slug' => ['required', 'max:255', Rule::unique('categories', 'slug')],
+        ], [
+            'slug.required' => 'Tên phải chứa ít nhất một chữ hoặc số để tạo đường dẫn.',
+            'slug.unique' => 'Tên này tạo đường dẫn trùng với dữ liệu đã có. Vui lòng chọn tên khác.',
         ]);
 
         Category::create([
@@ -51,10 +61,19 @@ class CategoryController extends Controller
     {
         $request->validate([
             // unique:categories,name,{$category->id} giúp bỏ qua check trùng lặp với chính nó
+            'description' => 'nullable|string',
             'name' => 'required|string|max:255|unique:categories,name,' . $category->id,
         ], [
             'name.required' => 'Tên danh mục không được để trống.',
             'name.unique' => 'Tên danh mục này đã tồn tại.',
+        ]);
+
+        $request->merge(['slug' => \Illuminate\Support\Str::slug($request->name)]);
+        $request->validate([
+            'slug' => ['required', 'max:255', Rule::unique('categories', 'slug')->ignore($category)],
+        ], [
+            'slug.required' => 'Tên phải chứa ít nhất một chữ hoặc số để tạo đường dẫn.',
+            'slug.unique' => 'Tên này tạo đường dẫn trùng với dữ liệu đã có. Vui lòng chọn tên khác.',
         ]);
 
         $category->update([

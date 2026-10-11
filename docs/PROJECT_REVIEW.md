@@ -17,9 +17,9 @@
 |---|---|
 | Laravel 10, PHP 8, MySQL | Có, home đọc được DB local |
 | Eloquent, migration, quan hệ | Có Category/Product/User/Order/OrderItem; kiểm thử DB mới bằng SQLite |
-| Seeder | Có, chạy thành công trên DB test mới; chưa idempotent khi chạy lại |
+| Seeder | Có, chạy thành công trên DB test mới; đã bổ sung firstOrCreate để chạy lại không trùng dữ liệu mẫu |
 | Blade + Bootstrap 5 | Có; hoàn thiện layout khách/admin và responsive GĐ2 |
-| CRUD Category/Product + upload | Có backend validation; kiểm thử render các form; chưa test file upload trong lượt này |
+| CRUD Category/Product + upload | Có backend validation; kiểm thử render các form; đã test CRUD, validation, upload/thay/xóa ảnh trên disk test |
 | Auth | Kiểm thử register/login/logout thành công trên DB test |
 | Admin/Customer | develop có AdminMiddleware; CustomerMiddleware và route customer còn ở branch Tuấn |
 | Search + pagination | Admin product keyword + paginate(5); order status + paginate(10); trang khách chưa có search |
@@ -34,11 +34,11 @@
 1. Tuấn: merge GĐ2 qua PR về develop sau khi sửa migration thêm role trùng. Branch Tuấn thêm role không kiểm tra tồn tại, trong khi DB mới từ develop đã có role; DB local sau migration sửa cũng sẽ có role.
 2. Gia Huy: migration ensure_role bổ sung cho DB cũ, mặc định customer. Không tự đổi quyền tài khoản hiện có.
 3. Vĩ: search mới ở admin; nếu cần người mua tìm kiếm thì bổ sung StoreController và store/index. Lọc order đang chưa giữ status khi paginate từ controller nhưng view appends nên vẫn giữ.
-4. Category/Product dùng slug unique nhưng validate theo name; hai tên khác nhau cùng slug có thể lỗi DB. Chưa sửa nghiệp vụ CRUD trong lượt UI này.
-5. Route resource có show, controller chưa có show; UI không dùng route show. Có thể giới hạn resource trước bản cuối.
+4. Đã sửa Category/Product: validate slug unique và không rỗng trước khi ghi DB; lỗi hiển thị trong form, giữ slug của chính bản ghi khi cập nhật.
+5. Đã giới hạn resource except(show), không còn route trỏ tới phương thức thiếu.
 6. Order cancelled chưa có cơ chế hoàn stock. Cần nhóm thống nhất nghiệp vụ trước khi sửa.
 7. Login/register views của Tuấn vẫn là giao diện riêng; checkbox remember chưa được backend Auth::attempt truyền vào.
-8. Chạy Seeder lại trên DB đã seed có thể trùng email/name; không chạy Seeder trên DB local có dữ liệu.
+8. Đã sửa Seeder bằng firstOrCreate; test chạy hai lần và giữ nguyên tên/mật khẩu tài khoản tồn tại. Không chạy Seeder lại trên DB local trong lượt này.
 9. Không kết luận đã hoàn thành GĐ3: cần test MySQL với sản phẩm/ảnh thật, báo cáo, screenshot và tích hợp auth GĐ2.
 
 ## GĐ2 Gia Huy đã làm
@@ -53,12 +53,18 @@
 
 ## Kiểm thử
 
-- php artisan test: 8 tests, 60 assertions, gồm migration sửa DB cũ và schema mới.
+- php artisan test: 14 tests, 117 assertions; gồm migration DB cũ/mới, CRUD/upload ảnh, collision slug, Seeder chạy lại và validation description.
 - Test fresh migration + Seeder, register/login/logout, cart/checkout/trừ stock.
 - Test home rỗng/active/inactive/hết hàng, role bảo vệ dashboard, số liệu dashboard, render admin forms và một thanh pagination.
 - Home đã kiểm tra bằng trình duyệt tại 127.0.0.1:8013, DB MySQL local.
 - Bootstrap tải qua CDN; môi trường demo cần internet hoặc chuẩn bị asset local.
 
-Không merge main/develop trong lượt triển khai này; thay đổi đưa qua PR.
+Hoàn thiện qua PR #13 về develop theo yêu cầu user; không merge main.
 
 Migration ensure_role đã chạy thành công trên MySQL local; role mặc định customer. Ảnh home: home-preview.jpg.
+
+## Rà soát trước merge GĐ2
+- Sửa thêm validation description nullable|string cho Category/Product.
+- PR #14 auth-user -> develop đang mở; PR #10 auth-user -> main cũng đang mở sai workflow, chưa thao tác với hai PR này.
+
+Kết quả cuối trước merge: 14 tests / 117 assertions; lint 48 file PHP và Blade cache đạt. Test trên SQLite memory; chưa chốt E2E MySQL toàn nhóm.
