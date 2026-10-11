@@ -7,15 +7,17 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->string('role')->default('customer')->after('password');
-        });
+        // develop đã có cột role trong create_users_table, chỉ thêm khi chưa có
+        if (!Schema::hasColumn('users', 'role')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->string('role')->default('customer')->after('password');
+            });
+        }
     }
 
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('role');
-        });
+        // Không xóa cột role: cột này do create_users_table tạo ra,
+        // xóa ở đây sẽ làm phần đăng nhập/phân quyền ngừng hoạt động
     }
 };
