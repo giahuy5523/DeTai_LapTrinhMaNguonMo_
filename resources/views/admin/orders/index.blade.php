@@ -1,6 +1,6 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
-@section('content')
+@section('admin-content')
 <div class="container-fluid px-4 my-4">
     <h2 class="mb-4">Quản Lý Trạng Thái Đơn Hàng</h2>
 
@@ -41,7 +41,7 @@
     <!-- Bảng Danh sách Đơn hàng -->
     <div class="card shadow-sm">
         <div class="card-body">
-            <table class="table table-bordered table-hover align-middle mb-0">
+            <div class="table-responsive"><table class="table table-bordered table-hover align-middle mb-0">
                 <thead class="table-dark">
                     <tr>
                         <th width="80">Mã ĐH</th>
@@ -96,7 +96,7 @@
                         </tr>
                     @endforelse
                 </tbody>
-            </table>
+            </table></div>
 
             <!-- Thanh Phân Trang -->
             <div class="d-flex justify-content-end mt-3">

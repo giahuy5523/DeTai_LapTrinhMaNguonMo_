@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Category; // Nhớ import Model Category
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class ProductController extends Controller
 {
@@ -40,6 +41,7 @@ class ProductController extends Controller
         // Kiểm tra dữ liệu đầu vào (Validation)
         $request->validate([
             'category_id' => 'required|exists:categories,id',
+            'description' => 'nullable|string',
             'name' => 'required|string|max:255|unique:products,name',
             'price' => 'required|numeric|min:0',
             'quantity' => 'required|integer|min:0',
@@ -48,6 +50,14 @@ class ProductController extends Controller
             'name.unique' => 'Tên sản phẩm này đã tồn tại.',
             'category_id.required' => 'Vui lòng chọn danh mục.',
             'image.image' => 'File tải lên phải là hình ảnh.',
+        ]);
+
+        $request->merge(['slug' => \Illuminate\Support\Str::slug($request->name)]);
+        $request->validate([
+            'slug' => ['required', 'max:255', Rule::unique('products', 'slug')],
+        ], [
+            'slug.required' => 'Tên phải chứa ít nhất một chữ hoặc số để tạo đường dẫn.',
+            'slug.unique' => 'Tên này tạo đường dẫn trùng với dữ liệu đã có. Vui lòng chọn tên khác.',
         ]);
 
         $imagePath = null;
@@ -82,10 +92,19 @@ class ProductController extends Controller
     {
         $request->validate([
             'category_id' => 'required|exists:categories,id',
+            'description' => 'nullable|string',
             'name' => 'required|string|max:255|unique:products,name,' . $product->id,
             'price' => 'required|numeric|min:0',
             'quantity' => 'required|integer|min:0',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+        ]);
+
+        $request->merge(['slug' => \Illuminate\Support\Str::slug($request->name)]);
+        $request->validate([
+            'slug' => ['required', 'max:255', Rule::unique('products', 'slug')->ignore($product)],
+        ], [
+            'slug.required' => 'Tên phải chứa ít nhất một chữ hoặc số để tạo đường dẫn.',
+            'slug.unique' => 'Tên này tạo đường dẫn trùng với dữ liệu đã có. Vui lòng chọn tên khác.',
         ]);
 
         $imagePath = $product->image;

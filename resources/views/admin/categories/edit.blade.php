@@ -1,8 +1,8 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', 'Chỉnh sửa Danh mục')
 
-@section('content')
+@section('admin-content')
 <div class="row justify-content-center">
     <div class="col-md-8">
         <div class="card">
@@ -11,14 +11,14 @@
             </div>
             <div class="card-body">
                 <form action="{{ route('admin.categories.update', $category) }}" method="POST">
-                    @csrf 
+                    @csrf
                     @method('PUT') <!-- Bắt buộc dùng PUT để update dữ liệu -->
-                    
+
                     <div class="mb-3">
                         <label class="form-label fw-bold">Tên danh mục <span class="text-danger">*</span></label>
                         <input type="text" name="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name', $category->name) }}">
-                        @error('name') 
-                            <div class="invalid-feedback">{{ $message }}</div> 
+                        @error('name')
+                            <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
 

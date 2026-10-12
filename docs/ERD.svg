@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1160" height="920" viewBox="0 0 1160 920"><rect width="1160" height="920" fill="#f6f7f9"/><style>text{font-family:Arial,sans-serif;fill:#19212b}.field{font-size:14px}.title{font-size:18px;font-weight:bold}.edge{fill:none;stroke:#527a40;stroke-width:2}</style><text x="40" y="40" font-size="26" font-weight="bold">SneakerShop — ERD</text><text x="40" y="65" font-size="14">PK: primary key · FK: foreign key · UK: unique · ?: nullable</text>
+<rect x='40' y='110' width='300' height='185' rx='12' fill='white' stroke='#c3cbd2'/><text x='58' y='140' class='title'>CATEGORIES</text>
+<text x='58' y='172' class='field'>id: bigint PK</text>
+<text x='58' y='195' class='field'>name: varchar UK</text>
+<text x='58' y='218' class='field'>slug: varchar UK</text>
+<text x='58' y='241' class='field'>description: text ?</text>
+<text x='58' y='264' class='field'>created_at / updated_at</text>
+<rect x='420' y='110' width='300' height='300' rx='12' fill='white' stroke='#c3cbd2'/><text x='438' y='140' class='title'>PRODUCTS</text>
+<text x='438' y='172' class='field'>id: bigint PK</text>
+<text x='438' y='195' class='field'>category_id: bigint FK</text>
+<text x='438' y='218' class='field'>name: varchar</text>
+<text x='438' y='241' class='field'>slug: varchar UK</text>
+<text x='438' y='264' class='field'>price: decimal(15,2)</text>
+<text x='438' y='287' class='field'>quantity: int = 0</text>
+<text x='438' y='310' class='field'>image: varchar ?</text>
+<text x='438' y='333' class='field'>description: text ?</text>
+<text x='438' y='356' class='field'>is_active: boolean = true</text>
+<text x='438' y='379' class='field'>created_at / updated_at</text>
+<rect x='40' y='520' width='300' height='254' rx='12' fill='white' stroke='#c3cbd2'/><text x='58' y='550' class='title'>USERS</text>
+<text x='58' y='582' class='field'>id: bigint PK</text>
+<text x='58' y='605' class='field'>name: varchar</text>
+<text x='58' y='628' class='field'>email: varchar UK</text>
+<text x='58' y='651' class='field'>email_verified_at: timestamp ?</text>
+<text x='58' y='674' class='field'>password: varchar</text>
+<text x='58' y='697' class='field'>role: varchar = customer</text>
+<text x='58' y='720' class='field'>remember_token: varchar ?</text>
+<text x='58' y='743' class='field'>created_at / updated_at</text>
+<rect x='420' y='520' width='300' height='277' rx='12' fill='white' stroke='#c3cbd2'/><text x='438' y='550' class='title'>ORDERS</text>
+<text x='438' y='582' class='field'>id: bigint PK</text>
+<text x='438' y='605' class='field'>user_id: bigint FK ?</text>
+<text x='438' y='628' class='field'>customer_name: varchar</text>
+<text x='438' y='651' class='field'>phone: varchar(20)</text>
+<text x='438' y='674' class='field'>address: text</text>
+<text x='438' y='697' class='field'>note: text ?</text>
+<text x='438' y='720' class='field'>total_amount: decimal(15,2)</text>
+<text x='438' y='743' class='field'>status: varchar = pending</text>
+<text x='438' y='766' class='field'>created_at / updated_at</text>
+<rect x='800' y='520' width='300' height='254' rx='12' fill='white' stroke='#c3cbd2'/><text x='818' y='550' class='title'>ORDER_ITEMS</text>
+<text x='818' y='582' class='field'>id: bigint PK</text>
+<text x='818' y='605' class='field'>order_id: bigint FK</text>
+<text x='818' y='628' class='field'>product_id: bigint FK ?</text>
+<text x='818' y='651' class='field'>product_name: varchar</text>
+<text x='818' y='674' class='field'>quantity: unsigned int</text>
+<text x='818' y='697' class='field'>unit_price: decimal(15,2)</text>
+<text x='818' y='720' class='field'>subtotal: decimal(15,2)</text>
+<text x='818' y='743' class='field'>created_at / updated_at</text>
+<path class="edge" d="M340 150 H420"/><text x="350" y="135" font-size="13">1 → 0..N</text><path class="edge" d="M340 570 H420"/><text x="346" y="555" font-size="12">0..1 → N</text><path class="edge" d="M720 570 H800"/><text x="730" y="555" font-size="13">1 → 0..N</text><path class="edge" d="M720 195 H950 V520"/><text x="765" y="180" font-size="13">Product 0..1 → N items</text><text x="40" y="875" font-size="14">Delete: category → products CASCADE; order → items CASCADE; user/product → orders/items SET NULL.</text><text x="40" y="900" font-size="14">Cart uses session. Laravel system tables omitted. Schema verified against develop migrations.</text></svg>

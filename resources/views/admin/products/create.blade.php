@@ -1,8 +1,8 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', 'Thêm Sản phẩm mới')
 
-@section('content')
+@section('admin-content')
 <div class="row justify-content-center">
     <div class="col-md-8">
         <div class="card">
@@ -13,7 +13,7 @@
                 <!-- Chú ý thuộc tính enctype bắt buộc để upload file -->
                 <form action="{{ route('admin.products.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
-                    
+
                     <div class="mb-3">
                         <label class="form-label fw-bold">Danh mục <span class="text-danger">*</span></label>
                         <select name="category_id" class="form-select @error('category_id') is-invalid @enderror">

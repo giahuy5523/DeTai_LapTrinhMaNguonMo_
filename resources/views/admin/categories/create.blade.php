@@ -1,8 +1,8 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', 'Thêm Danh mục mới')
 
-@section('content')
+@section('admin-content')
 <div class="row justify-content-center">
     <div class="col-md-8">
         <div class="card">
@@ -12,13 +12,13 @@
             <div class="card-body">
                 <form action="{{ route('admin.categories.store') }}" method="POST">
                     @csrf <!-- Bắt buộc phải có @csrf trong form POST của Laravel -->
-                    
+
                     <div class="mb-3">
                         <label class="form-label fw-bold">Tên danh mục <span class="text-danger">*</span></label>
                         <input type="text" name="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name') }}" placeholder="VD: Giày Nike, Giày Adidas...">
                         <!-- Hiển thị lỗi validation -->
-                        @error('name') 
-                            <div class="invalid-feedback">{{ $message }}</div> 
+                        @error('name')
+                            <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
 
