@@ -17,6 +17,7 @@ class Order extends Model
         'note',
         'total_amount',
         'status',
+        'payment_method',
     ];
 
     public function items()

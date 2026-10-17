@@ -43,9 +43,6 @@
         </div>
     </nav>
     <main id="main-content" class="container py-4 py-lg-5 flex-grow-1">
-        @if(session('success'))
-            <div class="alert alert-success" role="status">{{ session('success') }}</div>
-        @endif
         @if(session('error'))
             <div class="alert alert-danger" role="alert">{{ session('error') }}</div>
         @endif
