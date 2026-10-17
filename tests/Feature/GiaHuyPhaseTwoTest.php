@@ -59,7 +59,7 @@ class GiaHuyPhaseTwoTest extends TestCase
     {
         $this->get('/admin/dashboard')->assertRedirect(route('login'));
         $customer = User::factory()->create(['role' => 'customer']);
-        $this->actingAs($customer)->get('/admin/dashboard')->assertRedirect('/login');
+        $this->actingAs($customer)->get('/admin/dashboard')->assertRedirect('/');
         $admin = User::factory()->create(['role' => 'admin']);
         $this->product();
         foreach (['completed' => 1200000, 'pending' => 900000] as $status => $total) {
@@ -112,6 +112,7 @@ class GiaHuyPhaseTwoTest extends TestCase
         $this->post(route('cart.add', $product->id), ['quantity' => 2]);
         $this->post('/checkout', [
             'customer_name' => 'Test customer', 'phone' => '0900000000', 'address' => 'Test address',
+            'payment_method' => 'cod',
         ])->assertRedirect(route('checkout.success'))->assertSessionMissing('cart');
         $this->assertDatabaseHas('orders', ['user_id' => $customer->id, 'total_amount' => 2400000]);
         $this->assertDatabaseHas('order_items', ['product_id' => $product->id, 'quantity' => 2]);

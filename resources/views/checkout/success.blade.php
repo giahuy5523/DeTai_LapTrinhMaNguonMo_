@@ -42,9 +42,16 @@
 
                 <p>
                     <strong>Trạng thái:</strong>
-                    <span class="badge bg-warning text-dark">
-                        Chờ xử lý
-                    </span>
+                    @php
+                        $statusLabels = [
+                            'pending' => ['Chờ xử lý', 'bg-warning text-dark'],
+                            'processing' => ['Đang xử lý', 'bg-info text-dark'],
+                            'completed' => ['Đã hoàn thành', 'bg-success'],
+                            'cancelled' => ['Đã hủy', 'bg-danger'],
+                        ];
+                        [$statusLabel, $statusClass] = $statusLabels[$order->status] ?? [$order->status, 'bg-secondary'];
+                    @endphp
+                    <span class="badge {{ $statusClass }}">{{ $statusLabel }}</span>
                 </p>
 
                 <p>
@@ -64,7 +71,7 @@
                 </p>
             </div>
 
-            @if ($order->payment_method === 'bank_transfer')
+            @if ($order->payment_method === 'bank_transfer' && !in_array($order->status, ['cancelled', 'completed'], true))
                 <div class="alert alert-info text-start mt-4">
                     <strong>Hướng dẫn chuyển khoản</strong>
                     <p class="mb-0 mt-2">

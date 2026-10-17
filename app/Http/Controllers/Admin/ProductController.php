@@ -10,7 +10,7 @@ use Illuminate\Validation\Rule;
 
 class ProductController extends Controller
 {
-    
+
     // 1. Hiển thị danh sách Sản phẩm (kèm Tìm kiếm & Phân trang)
     public function index(Request $request)
     {
@@ -34,7 +34,7 @@ class ProductController extends Controller
         $categories = Category::all();
         return view('admin.products.create', compact('categories'));
     }
-    
+
     // 3. Xử lý lưu Sản phẩm và Upload ảnh
     public function store(Request $request)
     {
@@ -43,8 +43,8 @@ class ProductController extends Controller
             'category_id' => 'required|exists:categories,id',
             'description' => 'nullable|string',
             'name' => 'required|string|max:255|unique:products,name',
-            'price' => 'required|numeric|min:0',
-            'quantity' => 'required|integer|min:0',
+            'price' => 'required|numeric|min:0|max:9999999999999.99|decimal:0,2',
+            'quantity' => 'required|integer|min:0|max:2147483647',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048', // Bắt buộc là file ảnh, tối đa 2MB
         ], [
             'name.unique' => 'Tên sản phẩm này đã tồn tại.',
@@ -65,18 +65,30 @@ class ProductController extends Controller
         if ($request->hasFile('image')) {
             // Lưu ảnh vào thư mục storage/app/public/products và lấy ra đường dẫn
             $imagePath = $request->file('image')->store('products', 'public');
+            if ($imagePath === false) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'image' => 'Không lưu được ảnh. Vui lòng thử lại.',
+                ]);
+            }
         }
 
         // Lưu vào Database
-        Product::create([
-            'category_id' => $request->category_id,
-            'name' => $request->name,
-            'slug' => \Illuminate\Support\Str::slug($request->name),
-            'price' => $request->price,
-            'quantity' => $request->quantity,
-            'image' => $imagePath,
-            'description' => $request->description,
-        ]);
+        try {
+            Product::create([
+                'category_id' => $request->category_id,
+                'name' => $request->name,
+                'slug' => \Illuminate\Support\Str::slug($request->name),
+                'price' => $request->price,
+                'quantity' => $request->quantity,
+                'image' => $imagePath,
+                'description' => $request->description,
+            ]);
+        } catch (\Throwable $exception) {
+            if ($imagePath) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($imagePath);
+            }
+            throw $exception;
+        }
 
         return redirect()->route('admin.products.index')->with('success', 'Thêm sản phẩm thành công!');
     }
@@ -94,8 +106,8 @@ class ProductController extends Controller
             'category_id' => 'required|exists:categories,id',
             'description' => 'nullable|string',
             'name' => 'required|string|max:255|unique:products,name,' . $product->id,
-            'price' => 'required|numeric|min:0',
-            'quantity' => 'required|integer|min:0',
+            'price' => 'required|numeric|min:0|max:9999999999999.99|decimal:0,2',
+            'quantity' => 'required|integer|min:0|max:2147483647',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
         ]);
 
@@ -108,26 +120,37 @@ class ProductController extends Controller
         ]);
 
         $imagePath = $product->image;
-        
-        // Nếu có upload ảnh mới
+
+        $oldImagePath = $product->image;
         if ($request->hasFile('image')) {
-            // Xóa ảnh cũ khỏi ổ cứng (nếu tồn tại)
-            if ($imagePath && \Illuminate\Support\Facades\Storage::disk('public')->exists($imagePath)) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($imagePath);
-            }
-            // Lưu ảnh mới
             $imagePath = $request->file('image')->store('products', 'public');
+            if ($imagePath === false) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'image' => 'Không lưu được ảnh. Vui lòng thử lại.',
+                ]);
+            }
         }
 
-        $product->update([
-            'category_id' => $request->category_id,
-            'name' => $request->name,
-            'slug' => \Illuminate\Support\Str::slug($request->name),
-            'price' => $request->price,
-            'quantity' => $request->quantity,
-            'image' => $imagePath,
-            'description' => $request->description,
-        ]);
+        try {
+            $product->update([
+                'category_id' => $request->category_id,
+                'name' => $request->name,
+                'slug' => \Illuminate\Support\Str::slug($request->name),
+                'price' => $request->price,
+                'quantity' => $request->quantity,
+                'image' => $imagePath,
+                'description' => $request->description,
+            ]);
+        } catch (\Throwable $exception) {
+            if ($imagePath && $imagePath !== $oldImagePath) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($imagePath);
+            }
+            throw $exception;
+        }
+
+        if ($oldImagePath && $oldImagePath !== $imagePath) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($oldImagePath);
+        }
 
         return redirect()->route('admin.products.index')->with('success', 'Cập nhật sản phẩm thành công!');
     }
@@ -135,12 +158,12 @@ class ProductController extends Controller
     // 6. Xóa sản phẩm
     public function destroy(Product $product)
     {
-        // Xóa ảnh gốc trước khi xóa data
+        // Xóa bản ghi trước, giữ ảnh nếu thao tác database thất bại.
+        $product->delete();
         if ($product->image && \Illuminate\Support\Facades\Storage::disk('public')->exists($product->image)) {
             \Illuminate\Support\Facades\Storage::disk('public')->delete($product->image);
         }
-        
-        $product->delete();
+
         return redirect()->route('admin.products.index')->with('success', 'Đã xóa sản phẩm!');
     }
 }

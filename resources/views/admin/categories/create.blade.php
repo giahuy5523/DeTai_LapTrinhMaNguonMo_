@@ -14,8 +14,8 @@
                     @csrf <!-- Bắt buộc phải có @csrf trong form POST của Laravel -->
 
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Tên danh mục <span class="text-danger">*</span></label>
-                        <input type="text" name="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name') }}" placeholder="VD: Giày Nike, Giày Adidas...">
+                        <label for="name" class="form-label fw-bold">Tên danh mục <span class="text-danger">*</span></label>
+                        <input id="name" type="text" name="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name') }}" placeholder="VD: Giày Nike, Giày Adidas..." maxlength="255" required>
                         <!-- Hiển thị lỗi validation -->
                         @error('name')
                             <div class="invalid-feedback">{{ $message }}</div>
@@ -23,8 +23,8 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Mô tả</label>
-                        <textarea name="description" class="form-control" rows="4" placeholder="Nhập mô tả cho danh mục này...">{{ old('description') }}</textarea>
+                        <label for="description" class="form-label fw-bold">Mô tả</label>
+                        <textarea id="description" name="description" class="form-control" rows="4" placeholder="Nhập mô tả cho danh mục này...">{{ old('description') }}</textarea>
                     </div>
 
                     <div class="d-flex justify-content-end gap-2">

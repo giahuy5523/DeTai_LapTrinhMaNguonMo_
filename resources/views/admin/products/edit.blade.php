@@ -15,8 +15,8 @@
                     @method('PUT')
 
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Danh mục <span class="text-danger">*</span></label>
-                        <select name="category_id" class="form-select @error('category_id') is-invalid @enderror">
+                        <label for="category_id" class="form-label fw-bold">Danh mục <span class="text-danger">*</span></label>
+                        <select id="category_id" name="category_id" class="form-select @error('category_id') is-invalid @enderror" required>
                             @foreach($categories as $category)
                                 <option value="{{ $category->id }}" {{ old('category_id', $product->category_id) == $category->id ? 'selected' : '' }}>
                                     {{ $category->name }}
@@ -27,38 +27,40 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Tên giày <span class="text-danger">*</span></label>
-                        <input type="text" name="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name', $product->name) }}">
+                        <label for="name" class="form-label fw-bold">Tên giày <span class="text-danger">*</span></label>
+                        <input id="name" type="text" name="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name', $product->name) }}" maxlength="255" required>>
                         @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label fw-bold">Giá bán (VNĐ) <span class="text-danger">*</span></label>
-                            <input type="number" name="price" class="form-control" value="{{ old('price', $product->price) }}" min="0">
+                            <label for="price" class="form-label fw-bold">Giá bán (VNĐ) <span class="text-danger">*</span></label>
+                            <input id="price" type="number" name="price" class="form-control @error('price') is-invalid @enderror" value="{{ old('price', $product->price) }}" min="0" step="0.01" max="9999999999999.99" required>
+                            @error('price') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label fw-bold">Số lượng kho <span class="text-danger">*</span></label>
-                            <input type="number" name="quantity" class="form-control" value="{{ old('quantity', $product->quantity) }}" min="0">
+                            <label for="quantity" class="form-label fw-bold">Số lượng kho <span class="text-danger">*</span></label>
+                            <input id="quantity" type="number" name="quantity" class="form-control @error('quantity') is-invalid @enderror" value="{{ old('quantity', $product->quantity) }}" min="0" step="1" max="2147483647" required>
+                            @error('quantity') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Ảnh đại diện mới (Bỏ trống nếu giữ nguyên)</label>
-                        <input type="file" name="image" class="form-control @error('image') is-invalid @enderror" accept="image/*">
+                        <label for="image" class="form-label fw-bold">Ảnh đại diện mới (Bỏ trống nếu giữ nguyên)</label>
+                        <input id="image" type="file" name="image" class="form-control @error('image') is-invalid @enderror" accept="image/*">
                         @error('image') <div class="invalid-feedback">{{ $message }}</div> @enderror
 
                         @if($product->image)
                             <div class="mt-2">
                                 <span class="text-muted d-block mb-1">Ảnh hiện tại:</span>
-                                <img src="{{ asset('storage/' . $product->image) }}" width="120" class="img-thumbnail">
+                                <img src="{{ asset('storage/' . $product->image) }}" width="120" class="img-thumbnail" alt="{{ $product->name }}">
                             </div>
                         @endif
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Mô tả chi tiết</label>
-                        <textarea name="description" class="form-control" rows="4">{{ old('description', $product->description) }}</textarea>
+                        <label for="description" class="form-label fw-bold">Mô tả chi tiết</label>
+                        <textarea id="description" name="description" class="form-control" rows="4">{{ old('description', $product->description) }}</textarea>
                     </div>
 
                     <div class="d-flex justify-content-end gap-2">
