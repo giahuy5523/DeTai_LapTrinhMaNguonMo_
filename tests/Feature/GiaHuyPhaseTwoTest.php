@@ -59,7 +59,7 @@ class GiaHuyPhaseTwoTest extends TestCase
     {
         $this->get('/admin/dashboard')->assertRedirect(route('login'));
         $customer = User::factory()->create(['role' => 'customer']);
-        $this->actingAs($customer)->get('/admin/dashboard')->assertRedirect('/login');
+        $this->actingAs($customer)->get('/admin/dashboard')->assertRedirect('/');
         $admin = User::factory()->create(['role' => 'admin']);
         $this->product();
         foreach (['completed' => 1200000, 'pending' => 900000] as $status => $total) {
