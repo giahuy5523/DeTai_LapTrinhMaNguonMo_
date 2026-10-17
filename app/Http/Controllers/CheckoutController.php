@@ -10,7 +10,7 @@ use Illuminate\Validation\ValidationException;
 
 class CheckoutController extends Controller
 {
-    // Hiển thị trang checkout
+    // Hiển thị trang thanh toán
     public function index()
     {
         $cart = session()->get('cart', []);
@@ -21,7 +21,7 @@ class CheckoutController extends Controller
         }
 
         $total = collect($cart)->sum(function ($item) {
-            return $item['price'] * $item['quantity'];
+            return (float) $item['price'] * (int) $item['quantity'];
         });
 
         return view('checkout.index', compact('cart', 'total'));
@@ -33,8 +33,9 @@ class CheckoutController extends Controller
         $validated = $request->validate([
             'customer_name' => ['required', 'string', 'max:255'],
             'phone' => ['required', 'string', 'max:20'],
-            'address' => ['required', 'string'],
-            'note' => ['nullable', 'string'],
+            'address' => ['required', 'string', 'max:1000'],
+            'note' => ['nullable', 'string', 'max:2000'],
+            'payment_method' => ['required', 'in:cod,bank_transfer'],
         ]);
 
         $cart = session()->get('cart', []);
@@ -44,79 +45,87 @@ class CheckoutController extends Controller
                 ->with('error', 'Giỏ hàng của bạn đang trống.');
         }
 
-        try {
-            $order = DB::transaction(function () use ($validated, $cart) {
-                $products = [];
-                $total = 0;
+        $order = DB::transaction(function () use ($validated, $cart) {
+            $orderItems = [];
+            $total = 0;
 
-                // Kiểm tra sản phẩm và tồn kho mới nhất
-                foreach ($cart as $id => $item) {
-                    $product = Product::where('is_active', true)
-                        ->lockForUpdate()
-                        ->find($id);
+            // Kiểm tra giá, trạng thái bán và tồn kho từ database
+            foreach ($cart as $id => $item) {
+                $quantity = filter_var(
+                    $item['quantity'] ?? null,
+                    FILTER_VALIDATE_INT
+                );
 
-                    if (!$product) {
-                        throw ValidationException::withMessages([
-                            'cart' => 'Một sản phẩm trong giỏ hàng không còn tồn tại hoặc đã ngừng bán.',
-                        ]);
-                    }
-
-                    $quantity = (int) ($item['quantity'] ?? 0);
-
-                    if ($quantity < 1 || $quantity > $product->quantity) {
-                        throw ValidationException::withMessages([
-                            'cart' => 'Sản phẩm "' . $product->name .
-                                '" không đủ số lượng trong kho.',
-                        ]);
-                    }
-
-                    $subtotal = $product->price * $quantity;
-                    $total += $subtotal;
-
-                    $products[] = [
-                        'product' => $product,
-                        'quantity' => $quantity,
-                        'subtotal' => $subtotal,
-                    ];
+                if (!$quantity || $quantity < 1) {
+                    throw ValidationException::withMessages([
+                        'cart' => 'Số lượng sản phẩm trong giỏ hàng không hợp lệ.',
+                    ]);
                 }
 
-                // Tạo đơn hàng
-                $order = Order::create([
-                    'user_id' => auth()->id(),
-                    'customer_name' => $validated['customer_name'],
-                    'phone' => $validated['phone'],
-                    'address' => $validated['address'],
-                    'note' => $validated['note'] ?? null,
-                    'total_amount' => $total,
-                    'status' => 'pending',
+                $product = Product::where('is_active', true)
+                    ->whereKey($id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (!$product) {
+                    throw ValidationException::withMessages([
+                        'cart' => 'Một sản phẩm không còn tồn tại hoặc đã ngừng bán.',
+                    ]);
+                }
+
+                if ($quantity > $product->quantity) {
+                    throw ValidationException::withMessages([
+                        'cart' => 'Sản phẩm "' . $product->name
+                            . '" không đủ số lượng trong kho. Hiện còn: '
+                            . $product->quantity . '.',
+                    ]);
+                }
+
+                $subtotal = (float) $product->price * $quantity;
+                $total += $subtotal;
+
+                $orderItems[] = [
+                    'product' => $product,
+                    'quantity' => $quantity,
+                    'subtotal' => $subtotal,
+                ];
+            }
+
+            // Tạo đơn hàng, giữ trạng thái ban đầu là pending
+            $order = Order::create([
+                'user_id' => auth()->id(),
+                'customer_name' => $validated['customer_name'],
+                'phone' => $validated['phone'],
+                'address' => $validated['address'],
+                'note' => $validated['note'] ?? null,
+                'total_amount' => $total,
+                'payment_method' => $validated['payment_method'],
+                'status' => 'pending',
+            ]);
+
+            // Lưu chi tiết đơn hàng và trừ tồn kho
+            foreach ($orderItems as $item) {
+                $product = $item['product'];
+
+                $order->items()->create([
+                    'product_id' => $product->id,
+                    'product_name' => $product->name,
+                    'quantity' => $item['quantity'],
+                    'unit_price' => $product->price,
+                    'subtotal' => $item['subtotal'],
                 ]);
 
-                // Lưu chi tiết đơn hàng và trừ tồn kho
-                foreach ($products as $item) {
-                    $product = $item['product'];
+                $product->decrement('quantity', $item['quantity']);
+            }
 
-                    $order->items()->create([
-                        'product_id' => $product->id,
-                        'product_name' => $product->name,
-                        'quantity' => $item['quantity'],
-                        'unit_price' => $product->price,
-                        'subtotal' => $item['subtotal'],
-                    ]);
+            return $order;
+        });
 
-                    $product->decrement(
-                        'quantity',
-                        $item['quantity']
-                    );
-                }
-
-                return $order;
-            });
-        } catch (ValidationException $e) {
-            throw $e;
-        }
-
-        // Chỉ xóa giỏ sau khi transaction thành công
+        // Chỉ xóa giỏ hàng sau khi transaction thành công
         session()->forget('cart');
+
+        // Lưu ID để trang thành công lấy đúng đơn hàng
+        session()->put('last_checkout_order_id', $order->id);
 
         return redirect()->route('checkout.success')
             ->with('success', 'Đặt hàng thành công!')
@@ -126,12 +135,20 @@ class CheckoutController extends Controller
     // Trang thông báo đặt hàng thành công
     public function success()
     {
-        if (!session()->has('success')) {
+        $orderId = session('last_checkout_order_id');
+
+        if (!$orderId) {
             return redirect()->route('store.index');
         }
 
-        return view('checkout.success', [
-            'orderId' => session('order_id'),
-        ]);
+        $order = Order::whereKey($orderId)
+            ->where('user_id', auth()->id())
+            ->first();
+
+        if (!$order) {
+            return redirect()->route('store.index');
+        }
+
+        return view('checkout.success', compact('order'));
     }
 }

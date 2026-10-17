@@ -5,13 +5,6 @@
     <h2 class="mb-4">Quản Lý Trạng Thái Đơn Hàng</h2>
 
     {{-- Thông báo thành công --}}
-    @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
-
     <!-- Form Lọc trạng thái đơn hàng -->
     <div class="card mb-4 shadow-sm">
         <div class="card-body">

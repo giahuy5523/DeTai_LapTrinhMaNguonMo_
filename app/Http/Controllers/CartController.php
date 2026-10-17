@@ -3,44 +3,87 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Models\Order;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class CartController extends Controller
 {
-    // Hiển thị giỏ hàng
+    // Hiển thị giỏ hàng và danh sách đơn hàng của khách
     public function index()
     {
         $cart = session()->get('cart', []);
 
+        foreach ($cart as $id => &$item) {
+            $product = Product::find($id);
+
+            if (!$product) {
+                $item['is_active'] = false;
+                $item['stock'] = 0;
+                continue;
+            }
+
+            $item['id'] = $product->id;
+            $item['name'] = $product->name;
+            $item['price'] = $product->price;
+            $item['image'] = $product->image;
+            $item['is_active'] = (bool) $product->is_active;
+            $item['stock'] = (int) $product->quantity;
+        }
+
+        unset($item);
+
+        session()->put('cart', $cart);
+
         $total = collect($cart)->sum(function ($item) {
-            return $item['price'] * $item['quantity'];
+            return (float) ($item['price'] ?? 0)
+                * (int) ($item['quantity'] ?? 0);
         });
 
-        return view('cart.index', compact('cart', 'total'));
+        // Ẩn đơn đã hủy khỏi danh sách đơn hàng gần đây
+        $recentOrders = Order::with('items')
+            ->where('user_id', auth()->id())
+            ->where('status', '!=', 'cancelled')
+            ->latest()
+            ->take(10)
+            ->get();
+
+        return view('cart.index', compact(
+            'cart',
+            'total',
+            'recentOrders'
+        ));
     }
 
     // Thêm sản phẩm vào giỏ
     public function add(Request $request, $id)
     {
-        $product = Product::where('is_active', true)->findOrFail($id);
-
         $request->validate([
             'quantity' => ['nullable', 'integer', 'min:1'],
         ]);
 
+        $product = Product::where('is_active', true)
+            ->findOrFail($id);
+
         $quantity = (int) $request->input('quantity', 1);
 
         if ($quantity > $product->quantity) {
-            return back()->with('error', 'Số lượng vượt quá tồn kho.');
+            return back()->with(
+                'error',
+                'Số lượng vượt quá tồn kho.'
+            );
         }
 
         $cart = session()->get('cart', []);
 
-        $currentQuantity = $cart[$id]['quantity'] ?? 0;
+        $currentQuantity = (int) ($cart[$id]['quantity'] ?? 0);
         $newQuantity = $currentQuantity + $quantity;
 
         if ($newQuantity > $product->quantity) {
-            return back()->with('error', 'Giỏ hàng vượt quá số lượng tồn kho.');
+            return back()->with(
+                'error',
+                'Giỏ hàng vượt quá số lượng tồn kho.'
+            );
         }
 
         $cart[$id] = [
@@ -49,6 +92,8 @@ class CartController extends Controller
             'price' => $product->price,
             'image' => $product->image,
             'quantity' => $newQuantity,
+            'is_active' => (bool) $product->is_active,
+            'stock' => (int) $product->quantity,
         ];
 
         session()->put('cart', $cart);
@@ -60,7 +105,7 @@ class CartController extends Controller
     // Cập nhật số lượng
     public function update(Request $request, $id)
     {
-        $request->validate([
+        $validated = $request->validate([
             'quantity' => ['required', 'integer', 'min:1'],
         ]);
 
@@ -71,14 +116,41 @@ class CartController extends Controller
                 ->with('error', 'Sản phẩm không có trong giỏ hàng.');
         }
 
-        $product = Product::findOrFail($id);
-        $quantity = (int) $request->quantity;
+        $product = Product::find($id);
 
-        if ($quantity > $product->quantity) {
-            return back()->with('error', 'Số lượng vượt quá tồn kho.');
+        if (!$product) {
+            return back()->with(
+                'error',
+                'Sản phẩm không còn tồn tại. Vui lòng xóa khỏi giỏ hàng.'
+            );
         }
 
-        $cart[$id]['quantity'] = $quantity;
+        if (!$product->is_active) {
+            return back()->with(
+                'error',
+                'Sản phẩm đã ngừng bán. Vui lòng xóa khỏi giỏ hàng.'
+            );
+        }
+
+        $quantity = (int) $validated['quantity'];
+
+        if ($quantity > $product->quantity) {
+            return back()->with(
+                'error',
+                'Số lượng vượt quá tồn kho. Hiện còn: '
+                    . $product->quantity . '.'
+            );
+        }
+
+        $cart[$id] = [
+            'id' => $product->id,
+            'name' => $product->name,
+            'price' => $product->price,
+            'image' => $product->image,
+            'quantity' => $quantity,
+            'is_active' => (bool) $product->is_active,
+            'stock' => (int) $product->quantity,
+        ];
 
         session()->put('cart', $cart);
 
@@ -97,5 +169,49 @@ class CartController extends Controller
 
         return redirect()->route('cart.index')
             ->with('success', 'Đã xóa sản phẩm khỏi giỏ hàng.');
+    }
+
+    // Hủy đơn hàng đang chờ xử lý và hoàn lại tồn kho
+    public function cancelOrder($id)
+    {
+        DB::transaction(function () use ($id) {
+            $order = Order::where('user_id', auth()->id())
+                ->whereKey($id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            // Chỉ được hủy đơn đang chờ xử lý
+            if ($order->status !== 'pending') {
+                abort(
+                    422,
+                    'Chỉ có thể hủy đơn hàng đang chờ xử lý.'
+                );
+            }
+
+            // Lấy chi tiết đơn hàng
+            $orderItems = $order->items;
+
+            // Hoàn lại tồn kho cho từng sản phẩm
+            foreach ($orderItems as $item) {
+                $product = Product::whereKey($item->product_id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($product) {
+                    $product->increment(
+                        'quantity',
+                        (int) $item->quantity
+                    );
+                }
+            }
+
+            // Giữ đơn trong database để bảo toàn lịch sử
+            // và tránh tái sử dụng đơn đã hủy
+            $order->status = 'cancelled';
+            $order->save();
+        });
+
+        return redirect()->route('cart.index')
+            ->with('success', 'Đã hủy đơn hàng thành công.');
     }
 }

@@ -2,9 +2,9 @@
 
 ## Phạm vi xác minh ngày 17/10/2026
 
-Nền code: develop c566220b0e579bc4b9e54eecfa00b747fa5150c9.
+Nền code: develop d68e14cb807803a8bda2d27951e6f79c33bfe367.
 Đã đọc toàn bộ migration, model và routes đang tích hợp. MySQL cấu hình là ban_giay_the_thao;
-đã kết nối MySQL và đối chiếu information_schema: đủ 9 bảng, 68 cột; kiểu cơ bản, nullable, PK/UK và 4 FK/các quy tắc xóa khớp sơ đồ. Không thay đổi schema hay dữ liệu.
+đã kết nối MySQL và đối chiếu information_schema: đủ 9 bảng, 69 cột; kiểu cơ bản, nullable, PK/UK và 4 FK/các quy tắc xóa khớp sơ đồ. Không thay đổi schema hay dữ liệu.
 
 Nguồn chỉnh sửa đầy đủ: [ERD.mmd](ERD.mmd). Hình SVG được tạo lại từ cùng dữ liệu: [ERD.svg](ERD.svg).
 PK: khóa chính; FK: khóa ngoại SQL; UK: chỉ mục unique trong DB.
@@ -45,6 +45,7 @@ Chú thích nullable/default/độ dài nằm trên từng thuộc tính.
 - 2026_09_16_130928_create_products_table.php
 - 2026_09_18_133810_create_orders_table.php
 - 2026_09_18_133815_create_order_items_table.php
+- 2026_10_17_124830_add_payment_method_to_orders_table.php (orders.payment_method, varchar(30), default cod)
 - Hai migration bổ sung role ngày 11/10 đều kiểm tra hasColumn; không tạo bảng hay quan hệ mới.
 
 ## Chức năng và dữ liệu
@@ -53,12 +54,12 @@ Home dùng Product + category, lấy tối đa 8 sản phẩm active. Store hi�
 Admin CRUD Category/Product, upload ảnh, tìm sản phẩm và phân trang.
 Dashboard đếm Product/Category/Order, đếm pending và cộng total_amount của completed.
 Customer đặt hàng qua transaction: kiểm tra giá/stock từ DB, tạo Order/OrderItem, trừ stock, sau đó mới xóa giỏ.
-Admin sửa trạng thái Order; chưa có giới hạn chuyển trạng thái và hoàn kho trong develop hiện tại.
+Admin sửa trạng thái theo pending → processing/cancelled, processing → completed/cancelled; completed/cancelled không đổi tiếp. Khi hủy, transaction khóa Order/Product và hoàn stock một lần.
+Customer xem tối đa 10 đơn gần nhất chưa hủy trong giỏ; chỉ hủy đơn pending thuộc chính mình. payment_method là cod/bank_transfer, không phải bảng payments hay xác nhận chuyển khoản tự động.
 
 Bảng quyền CRUD và sơ đồ luồng: [CRUD_MATRIX.md](CRUD_MATRIX.md), [CRUD.mmd](CRUD.mmd).
 Không tạo Use Case.
 
-## Việc chưa tích hợp
+## Đồng bộ tích hợp
 
-PR #16 đang đề xuất payment_method trên orders, lịch sử/hủy đơn và hoàn kho.
-Chưa merge nên payment_method không nằm trong ERD hiện hành. Khi tích hợp phải cập nhật lại sơ đồ và kiểm tra luồng trạng thái trước GĐ3.
+PR #16 đã merge vào develop. ERD bổ sung payment_method; không thêm bảng hay FK. Ma trận CRUD và test tích hợp đã cập nhật theo luồng xem/hủy đơn và trạng thái mới.

@@ -1,81 +1,57 @@
-# Checklist GĐ2 Gia Huy – 17/10/2026
+# Checklist GĐ2 SneakerShop – 17/10/2026
 
-Nền: origin/develop c566220. Nhánh làm việc: feature/gia-huy-gd2-completion.
-Không commit/push/merge trong lượt này trước khi báo user. Không thay đổi DB hiện tại.
+Nhánh làm việc: feature/gia-huy-gd2-completion.
+Nền tích hợp: develop d68e14c (PR #16 của Trọng đã merge).
+Không merge PR hoặc thay đổi main/develop trong lượt sửa này.
 
-| Hạng mục | Trạng thái ban đầu | Phần triển khai |
-|---|---|---|
-| HomeController, dashboard | Đã có | Rà logic hiển thị active/hết hàng/số liệu và test |
-| Layout Home/Admin | Đã có Bootstrap 5 | Rà responsive/menu/role; bỏ flash trùng ở index Category/Product |
-| CRUD Category/Product | Đã có | Giới hạn giá/stock theo kiểu SQL, test validation |
-| Upload và hiển thị ảnh | Đã có nhưng xóa ảnh cũ trước khi lưu thay thế | Giữ ảnh cũ khi upload/lưu DB thất bại, dọn file mới khi DB lỗi |
-| Form | Label chưa gắn input, giá thiếu step thập phân | Bổ sung id/for, step, invalid-feedback, alt ảnh edit |
-| ERD | Thiếu thuộc tính/hệ thống, ghi chú cũ | ERD.mmd đầy đủ PK/FK/UK/default/null, tài liệu nguồn và SVG |
-| Sơ đồ/ma trận CRUD | Chưa có | CRUD_MATRIX.md và CRUD.mmd theo quyền và route thực tế |
-| Test redirect | 2 assertion cũ trên develop | Áp dụng đúng hai thay đổi đã có ở PR #17, không sửa Auth |
-| MySQL hiện tại | Đã bật XAMPP | Đã đối chiếu 9 bảng/68 cột, 4 FK; không thay đổi dữ liệu |
-| Use Case | Không yêu cầu | Không tạo |
-## Kết quả hoàn thiện
+## Bốn việc đã xử lý
 
-- ERD có đủ 9 bảng (5 nghiệp vụ + 4 hệ thống), đúng cột/PK/FK/UK/nullable/default; nguồn Mermaid chỉnh sửa được.
-- Ma trận CRUD mô tả quyền thực tế và phân biệt thao tác UI, thao tác controller gián tiếp, hành vi FK.
-- HomeController/DashboardController đã kiểm tra, giữ nguyên vì không tìm thấy lỗi trong phạm vi đợt này.
-- Không sửa AuthController, middleware, CartController, CheckoutController, OrderController hay phần search của Vĩ.
-- Không tạo bảng/migration mới, không thay đổi model hoặc DB hiện tại, không tạo Use Case.
-
-## File đã sửa và lý do
-
-| File | Lý do |
+| Việc | Kết quả |
 |---|---|
-| app/Http/Controllers/Admin/ProductController.php | Validation giá/stock theo SQL; kiểm tra upload thất bại; giữ ảnh cũ tới khi lưu thành công; dọn file mới nếu lưu lỗi; xóa bản ghi trước khi dọn ảnh |
-| resources/views/admin/products/create.blade.php | id/for, step giá 0.01, giới hạn số, invalid-feedback |
-| resources/views/admin/products/edit.blade.php | Như form create, thêm alt ảnh hiện tại |
-| resources/views/admin/categories/create.blade.php | Liên kết label/input và required/maxlength |
-| resources/views/admin/categories/edit.blade.php | Liên kết label/input và required/maxlength |
-| resources/views/admin/products/index.blade.php | Bỏ thông báo success trùng layout chung |
-| resources/views/admin/categories/index.blade.php | Bỏ thông báo success trùng layout chung |
-| docs/ERD.md, docs/ERD.mmd, docs/ERD.svg | Cập nhật ERD và nguồn đối chiếu đầy đủ |
-| docs/CRUD_MATRIX.md, docs/CRUD.mmd | Thêm ma trận quyền và sơ đồ luồng CRUD |
-| tests/Feature/GiaHuyCrudTest.php | Đồng bộ assertion redirect đã có ở PR #17 |
-| tests/Feature/GiaHuyPhaseTwoTest.php | Đồng bộ assertion redirect đã có ở PR #17 |
-| tests/Feature/GiaHuyImageSafetyTest.php | Regression upload lỗi, lưu DB lỗi, dọn file mới, giới hạn số |
-| docs/GD2_GIA_HUY_CHECKLIST.md | Checklist, file thay đổi, bằng chứng kiểm tra và việc còn lại |
+| Trang đặt hàng thành công hiển thị sai trạng thái | Badge đọc orders.status, đủ pending/processing/completed/cancelled; không hiện hướng dẫn chuyển khoản khi đơn đã hủy/hoàn thành |
+| Test cũ không khớp code | Hai redirect Customer về /; checkout gửi payment_method=cod; thêm test tích hợp COD/bank_transfer, quyền hủy, chuyển trạng thái và hoàn kho |
+| Tích hợp phần Gia Huy và ERD/CRUD | Đã ghép develop mới vào feature; ERD thêm orders.payment_method; CRUD thêm xem/hủy đơn của Customer và cập nhật stock gián tiếp |
+| DB local thiếu migration mới | Chạy hai migration pending: add_role có guard và add_payment_method; tất cả migration hiện Ran |
 
-## Kết quả kiểm thử
+## Kiểm thử cuối
 
-- php artisan test: 18 tests passed, 139 assertions, SQLite memory (phpunit.xml force sqlite/:memory:).
-- Test Home: rỗng, active/inactive, hết hàng, form cart thật.
-- Test dashboard: guest/customer bị chặn, Admin xem được, số đếm và tổng completed đúng.
-- Test CRUD: create/update/delete danh mục/sản phẩm, slug trùng/rỗng, form render, pagination, validation tên/mô tả/giá/stock/file, thay/xóa ảnh.
-- Test ảnh lỗi: upload false không mất ảnh cũ; lỗi lưu DB không mất ảnh cũ và không để file mới mồ côi; lỗi tạo Product dọn upload.
-- Test Seeder chạy hai lần giữ nguyên tài khoản tồn tại.
-- Blade compile/cache thành công.
-- Không chạy migrate:fresh, db:wipe hoặc Seeder trên DB ứng dụng. Test RefreshDatabase chỉ dùng SQLite memory.
-- Đã kiểm tra Home qua Chrome/Playwright với MySQL: 1440x1000 và 390x844 không tràn ngang; menu mobile mở và aria-expanded=true.
-- MySQL đã kết nối; schema khớp ERD. DB hiện có 0 tài khoản role admin nên chưa login Admin để thử upload thật qua HTTP; test Admin/upload trên SQLite riêng đã đạt.
+- php artisan test: 25 tests passed, 259 assertions, dùng SQLite memory bắt buộc theo phpunit.xml.
+- PHP lint: 59 file đạt; Blade compile/cache đạt.
+- Test CRUD Category/Product, validation, slug, phân trang, upload/thay/xóa ảnh và trường hợp lưu ảnh/DB lỗi đạt.
+- Test trạng thái đơn: pending → processing/cancelled; processing → completed/cancelled; completed/cancelled không mở lại.
+- Hủy bởi Admin hoặc đúng Customer hoàn stock một lần; hủy lặp/khác chủ bị từ chối.
+- Checkout thiếu stock không tạo Order/OrderItem và giữ giỏ.
+- Trang success đọc trạng thái mới nhất; thông báo success hiển thị đúng một lần sau tích hợp layout.
+- MySQL ban_giay_the_thao: 9 bảng / 69 cột, 4 FK và quy tắc xóa khớp ERD.
+- Số dòng trước/sau migrate không đổi: users=1, categories=2, products=0, orders=0, order_items=0.
+- Không chạy migrate:fresh, db:wipe, Seeder trên DB ứng dụng; không tạo/nâng quyền tài khoản.
+- Home desktop 1440 và mobile 390 đã kiểm tra trước đó; ảnh home-desktop.png và home-mobile.png.
+- DB hiện chưa có Admin và sản phẩm thật: E2E MySQL qua UI Admin/upload vẫn cần dữ liệu/tài khoản do user xác định; không coi test SQLite là test concurrency MySQL.
 
-## Đối chiếu yêu cầu giảng viên
+## File GĐ2 Gia Huy
 
-| Yêu cầu | Bằng chứng |
-|---|---|
-| Laravel + MySQL | composer Laravel 10, config/.env dùng mysql; kết nối local và Home đọc DB thành công |
-| Eloquent ORM | Model Product/Category/Order/OrderItem/User; FK và quan hệ theo ERD |
-| Migration + Seeder | Migration đã đọc; fresh schema + Seeder kiểm thử trên SQLite tách biệt |
-| CRUD hai bảng có quan hệ | Category/Product đầy đủ qua middleware auth + admin; Product.category_id là FK |
-| Blade + Bootstrap 5 | Shared/admin layouts, Home/Admin views và bootstrap@5.3.2 |
-| Validation | CRUD và test dữ liệu không hợp lệ đạt |
-| ERD và mô tả chức năng | ERD.md/ERD.mmd/ERD.svg, CRUD_MATRIX.md/CRUD.mmd |
-| Use Case | Không yêu cầu, không tạo |
+- app/Http/Controllers/Admin/ProductController.php: giới hạn giá/stock theo SQL; giữ ảnh cũ tới khi lưu thành công, dọn file mới khi DB lỗi.
+- resources/views/admin/categories/{create,edit,index}.blade.php: label/input và bỏ flash trùng.
+- resources/views/admin/products/{create,edit,index}.blade.php: label/input, step giá, lỗi form, alt ảnh và bỏ flash trùng.
+- HomeController/DashboardController đã rà, giữ nguyên nghiệp vụ.
+- docs/ERD.md, ERD.mmd, ERD.svg: đủ bảng/cột/PK/FK/unique/nullable/default theo schema.
+- docs/CRUD_MATRIX.md, CRUD.mmd: quyền và luồng thao tác dữ liệu thực tế, không phải Use Case.
+- tests/Feature/GiaHuyImageSafetyTest.php: tình huống upload/DB lỗi và giới hạn kiểu số.
+- tests/Feature/GiaHuyCrudTest.php, GiaHuyPhaseTwoTest.php: đồng bộ auth/checkout hiện tại.
+
+## File bổ sung để chốt tích hợp
+
+- resources/views/checkout/success.blade.php: trạng thái động và hướng dẫn chuyển khoản phù hợp trạng thái.
+- resources/views/layouts/app.blade.php: khôi phục success flash dùng chung.
+- resources/views/cart/index.blade.php, store/index.blade.php, admin/orders/index.blade.php: bỏ success flash trùng layout.
+- tests/Feature/Gd2IntegrationTest.php: 7 kiểm tra hồi quy cho luồng mới.
+- Các controller auth/cart/checkout/order từ PR #16 được giữ nguyên; không viết lại phần thành viên khác.
 
 ## Trước GĐ3
 
-1. Đã đối chiếu schema MySQL. Cần tài khoản Admin được user xác định để kiểm thử giao diện Admin/upload qua HTTP; không tự tạo hay cấp quyền tài khoản.
-2. Home desktop/mobile và storage link đã kiểm tra. Upload thật qua browser chờ có tài khoản Admin phù hợp.
-3. PR #16 cần nhóm chốt chuyển trạng thái và hoàn kho đúng một lần trước tích hợp. payment_method chưa thuộc schema develop hiện tại.
-4. PR #17 đã có cùng hai assertion redirect: khi tạo PR nhánh này cần tránh xử lý hai lần, không sửa lại middleware để làm test xanh.
-5. Xóa Category hiện cascade Product theo FK; không thay đổi nghiệp vụ xóa trong đợt này. Dọn ảnh khi cascade Category còn là việc có thể cân nhắc riêng (không chặn việc schema/CRUD cơ bản).
-6. Chưa commit/push/merge các thay đổi này; cần báo user trước theo quy định.
-
-Kiểm tra cuối: lint 57 file PHP đạt; git diff --check đạt; SVG XML hợp lệ; public/storage là junction tới storage/app/public.
-
-Xác minh khi XAMPP đã bật: users.role đã tồn tại; migration 2026_10_11_131014 vẫn Pending nhưng có guard hasColumn, chưa chạy vì schema không thiếu role. Không có thao tác nâng quyền, seed hay ghi dữ liệu nghiệp vụ. Ảnh: home-desktop.png và home-mobile.png.
+1. Review PR tích hợp từ feature/gia-huy-gd2-completion về develop; chỉ merge khi user đồng ý.
+2. PR #17 có cùng hai assertion đã nằm trong nhánh này; không cần áp dụng lại hai lần.
+3. Kiểm thử E2E MySQL bằng tài khoản Admin/sản phẩm/ảnh thật và test đồng thời khi cần.
+4. Xóa Category vẫn cascade Product theo FK hiện có; không đổi quy tắc xóa trong đợt này.
+5. Chưa yêu cầu thanh toán online tự động; bank_transfer là lựa chọn/hướng dẫn, không xác nhận tiền tự động.
+6. Không tạo Use Case. Slide/báo cáo môn học chờ user yêu cầu.

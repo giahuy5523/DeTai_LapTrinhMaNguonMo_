@@ -17,4 +17,10 @@ flowchart TD
     CHECK --> I["C OrderItem"]
     CHECK --> STOCK["U Product.quantity: trừ tồn kho"]
     CHECK --> CLEAR["Xóa session cart sau thành công"]
-    O --> SUCCESS["R mã đơn vừa đặt tại success"]
+    O --> SUCCESS["R chi tiết đơn mới nhất tại success"]
+    CU --> HISTORY["R 10 đơn gần nhất chưa hủy của chính mình và OrderItem"]
+    HISTORY --> CANCEL["U hủy đơn pending của mình"]
+    CANCEL --> RESTORE["Transaction khóa Order/Product: hoàn stock một lần"]
+    ORD --> STATE["pending → processing/cancelled; processing → completed/cancelled"]
+    STATE --> RESTORE
+    RESTORE --> FINAL["Order cancelled; không được đổi lại trạng thái"]
