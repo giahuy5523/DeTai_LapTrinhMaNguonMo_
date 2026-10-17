@@ -40,8 +40,10 @@ class CartController extends Controller
                 * (int) ($item['quantity'] ?? 0);
         });
 
+        // Ẩn đơn đã hủy khỏi danh sách đơn hàng gần đây
         $recentOrders = Order::with('items')
             ->where('user_id', auth()->id())
+            ->where('status', '!=', 'cancelled')
             ->latest()
             ->take(10)
             ->get();
@@ -178,6 +180,7 @@ class CartController extends Controller
                 ->lockForUpdate()
                 ->firstOrFail();
 
+            // Chỉ được hủy đơn đang chờ xử lý
             if ($order->status !== 'pending') {
                 abort(
                     422,
@@ -185,9 +188,10 @@ class CartController extends Controller
                 );
             }
 
-            // Khóa chi tiết đơn hàng để xử lý trong transaction
+            // Lấy chi tiết đơn hàng
             $orderItems = $order->items;
 
+            // Hoàn lại tồn kho cho từng sản phẩm
             foreach ($orderItems as $item) {
                 $product = Product::whereKey($item->product_id)
                     ->lockForUpdate()
@@ -201,6 +205,8 @@ class CartController extends Controller
                 }
             }
 
+            // Giữ đơn trong database để bảo toàn lịch sử
+            // và tránh tái sử dụng đơn đã hủy
             $order->status = 'cancelled';
             $order->save();
         });

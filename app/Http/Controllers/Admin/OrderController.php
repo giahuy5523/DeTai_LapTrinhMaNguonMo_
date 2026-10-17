@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class OrderController extends Controller
 {
@@ -27,39 +28,83 @@ class OrderController extends Controller
     // Cập nhật trạng thái đơn hàng
     public function updateStatus(Request $request, Order $order)
     {
-        $request->validate([
-            'status' => 'required|in:pending,processing,completed,cancelled',
+        $validated = $request->validate([
+            'status' => [
+                'required',
+                'in:pending,processing,completed,cancelled',
+            ],
         ], [
             'status.required' => 'Vui lòng chọn trạng thái!',
             'status.in' => 'Trạng thái không hợp lệ!',
         ]);
 
-        DB::transaction(function () use ($request, $order) {
-            $order = Order::whereKey($order->id)
+        $newStatus = $validated['status'];
+
+        DB::transaction(function () use ($order, $newStatus) {
+            // Khóa đơn hàng để tránh cập nhật đồng thời
+            $lockedOrder = Order::whereKey($order->id)
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            $oldStatus = $order->status;
-            $newStatus = $request->status;
+            $oldStatus = $lockedOrder->status;
+
+            // Không cho thay đổi đơn đã hủy hoặc hoàn thành
+            if (in_array($oldStatus, ['cancelled', 'completed'], true)) {
+                throw ValidationException::withMessages([
+                    'status' => 'Đơn hàng đã hủy hoặc hoàn thành, không thể thay đổi trạng thái.',
+                ]);
+            }
+
+            // Không cho gửi lại trạng thái hiện tại
+            if ($oldStatus === $newStatus) {
+                return;
+            }
+
+            // Chỉ cho phép các bước chuyển trạng thái hợp lệ
+            $allowedTransitions = [
+                'pending' => ['processing', 'cancelled'],
+                'processing' => ['completed', 'cancelled'],
+            ];
+
+            if (
+                !isset($allowedTransitions[$oldStatus]) ||
+                !in_array(
+                    $newStatus,
+                    $allowedTransitions[$oldStatus],
+                    true
+                )
+            ) {
+                throw ValidationException::withMessages([
+                    'status' => 'Không thể chuyển từ trạng thái '
+                        . $oldStatus . ' sang ' . $newStatus . '.',
+                ]);
+            }
 
             // Chỉ hoàn kho khi đơn chuyển sang cancelled lần đầu
-            if ($oldStatus !== 'cancelled' && $newStatus === 'cancelled') {
-                foreach ($order->items as $item) {
-                    if ($item->product_id) {
-                        $product = Product::whereKey($item->product_id)
-                            ->lockForUpdate()
-                            ->first();
+            if ($newStatus === 'cancelled') {
+                $items = $lockedOrder->items;
 
-                        if ($product) {
-                            $product->increment('quantity', $item->quantity);
-                        }
+                foreach ($items as $item) {
+                    if (!$item->product_id) {
+                        continue;
+                    }
+
+                    $product = Product::whereKey($item->product_id)
+                        ->lockForUpdate()
+                        ->first();
+
+                    if ($product) {
+                        $product->increment(
+                            'quantity',
+                            (int) $item->quantity
+                        );
                     }
                 }
             }
 
-            $order->update([
-                'status' => $newStatus,
-            ]);
+            // Cập nhật trạng thái sau khi kiểm tra và xử lý tồn kho
+            $lockedOrder->status = $newStatus;
+            $lockedOrder->save();
         });
 
         return redirect()->back()->with(
