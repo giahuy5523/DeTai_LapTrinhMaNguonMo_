@@ -16,7 +16,7 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/san-pham', [StoreController::class, 'index'])->name('store.index');
 
 // --- ROUTES GIỎ HÀNG & CHECKOUT (Customer) ---
-Route::middleware(['auth','customer'])->group(function () {
+Route::middleware(['auth', 'customer'])->group(function () {
     Route::get('/gio-hang', [CartController::class, 'index'])->name('cart.index');
     Route::post('/gio-hang/them/{id}', [CartController::class, 'add'])->name('cart.add');
     Route::patch('/gio-hang/cap-nhat/{id}', [CartController::class, 'update'])->name('cart.update');
@@ -25,8 +25,9 @@ Route::middleware(['auth','customer'])->group(function () {
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
     Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
     Route::get('/checkout/thanh-cong', [CheckoutController::class, 'success'])->name('checkout.success');
+    Route::patch('/don-hang/{id}/huy', [CartController::class, 'cancelOrder'])
+        ->name('orders.cancel');
 });
-
 // --- ROUTES XÁC THỰC ---
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);

@@ -1,130 +1,211 @@
+
 @extends('layouts.app')
 
 @section('title', 'Thanh toán')
 
-
 @section('content')
 <div class="container py-4">
-    <h2 class="mb-4">Thông tin thanh toán</h2>
+    <h2 class="mb-4">Thanh toán đơn hàng</h2>
 
     @if (session('error'))
+        <div class="alert alert-danger">{{ session('error') }}</div>
+    @endif
+
+    @if ($errors->any())
         <div class="alert alert-danger">
-            {{ session('error') }}
+            <strong>Vui lòng kiểm tra lại:</strong>
+            <ul class="mb-0 mt-2">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
         </div>
     @endif
 
+    <form action="{{ route('checkout.store') }}" method="POST">
+        @csrf
 
-@if ($errors->any())
-    <div class="alert alert-danger">
-        <ul class="mb-0">
-            @foreach ($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-    </div>
-@endif
-    <div class="row">
-        {{-- Thông tin người nhận --}}
-        <div class="col-md-7">
-            <div class="card">
-                <div class="card-header">
-                    Thông tin người nhận
-                </div>
-
-                <div class="card-body">
-                    <form action="{{ route('checkout.store') }}" method="POST">
-                        @csrf
-                        <div class="mb-3">
-                            <label class="form-label">
-                                Họ và tên
-                            </label>
-                            <input type="text"
-                                   name="customer_name"
-                                   class="form-control"
-                                   placeholder="Nhập họ và tên">
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">
-                                Số điện thoại
-                            </label>
-                            <input type="text"
-                                   name="phone"
-                                   class="form-control"
-                                   placeholder="Nhập số điện thoại">
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">
-                                Địa chỉ nhận hàng
-                            </label>
-                            <textarea name="address"
-                                      class="form-control"
-                                      rows="3"
-                                      placeholder="Nhập địa chỉ nhận hàng"></textarea>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">
-                                Ghi chú
-                            </label>
-                            <textarea name="note"
-                                      class="form-control"
-                                      rows="2"
-                                      placeholder="Ghi chú (nếu có)"></textarea>
-                        </div>
-
-                        <button type="submit" class="btn btn-success">
-                             Đặt hàng
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-
-        {{-- Tóm tắt đơn hàng --}}
-        <div class="col-md-5 mt-4 mt-md-0">
-            <div class="card">
-                <div class="card-header">
-                    Đơn hàng của bạn
-                </div>
-
-                <div class="card-body">
-                    @foreach ($cart as $item)
-                        <div class="d-flex justify-content-between
-                                    align-items-start mb-3">
-                            <div>
-                                <strong>{{ $item['name'] }}</strong>
-                                <div class="text-muted">
-                                    Số lượng: {{ $item['quantity'] }}
-                                </div>
-                            </div>
-
-                            <span>
-                                {{ number_format(
-                                    $item['price'] * $item['quantity'],
-                                    0, ',', '.'
-                                ) }} đ
-                            </span>
-                        </div>
-                    @endforeach
-
-                    <hr>
-
-                    <div class="d-flex justify-content-between">
-                        <strong>Tổng cộng</strong>
-                        <strong class="text-danger">
-                            {{ number_format($total, 0, ',', '.') }} đ
-                        </strong>
+        <div class="row g-4">
+            <div class="col-lg-7">
+                <div class="card mb-4">
+                    <div class="card-header fw-bold">
+                        1. Thông tin người nhận
                     </div>
 
-                    <a href="{{ route('cart.index') }}"
-                       class="btn btn-outline-secondary mt-3">
-                        Quay lại giỏ hàng
-                    </a>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="customer_name" class="form-label">
+                                Họ và tên
+                            </label>
+                            <input
+                                id="customer_name"
+                                name="customer_name"
+                                type="text"
+                                class="form-control @error('customer_name') is-invalid @enderror"
+                                value="{{ old('customer_name') }}"
+                                maxlength="255"
+                                autocomplete="name"
+                                required
+                            >
+                            @error('customer_name')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="phone" class="form-label">
+                                Số điện thoại
+                            </label>
+                            <input
+                                id="phone"
+                                name="phone"
+                                type="tel"
+                                class="form-control @error('phone') is-invalid @enderror"
+                                value="{{ old('phone') }}"
+                                maxlength="20"
+                                autocomplete="tel"
+                                required
+                            >
+                            @error('phone')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="address" class="form-label">
+                                Địa chỉ nhận hàng
+                            </label>
+                            <textarea
+                                id="address"
+                                name="address"
+                                class="form-control @error('address') is-invalid @enderror"
+                                rows="3"
+                                autocomplete="street-address"
+                                required
+                            >{{ old('address') }}</textarea>
+                            @error('address')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="mb-0">
+                            <label for="note" class="form-label">
+                                Ghi chú (không bắt buộc)
+                            </label>
+                            <textarea
+                                id="note"
+                                name="note"
+                                class="form-control @error('note') is-invalid @enderror"
+                                rows="2"
+                                maxlength="2000"
+                            >{{ old('note') }}</textarea>
+                            @error('note')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header fw-bold">
+                        2. Phương thức thanh toán
+                    </div>
+
+                    <div class="card-body">
+                        <label class="border rounded p-3 d-flex gap-3 mb-3">
+                            <input
+                                class="form-check-input mt-1"
+                                type="radio"
+                                name="payment_method"
+                                value="cod"
+                                @checked(old('payment_method', 'cod') === 'cod')
+                                required
+                            >
+                            <span>
+                                <strong>Thanh toán khi nhận hàng (COD)</strong>
+                                <span class="d-block text-muted small">
+                                    Thanh toán trực tiếp khi nhận sản phẩm.
+                                </span>
+                            </span>
+                        </label>
+
+
+<label class="border rounded p-3 d-flex gap-3">
+    <input
+        class="form-check-input mt-1"
+        type="radio"
+        name="payment_method"
+        value="bank_transfer"
+        @checked(old('payment_method', 'cod') === 'bank_transfer')
+        required
+    >
+    <span>
+        <strong>Chuyển khoản ngân hàng (demo)</strong>
+        <span class="d-block text-muted small">
+            Hiển thị thông tin minh họa sau khi đặt hàng.
+            Không yêu cầu tài khoản ngân hàng thật.
+        </span>
+    </span>
+</label>
+
+
+                        <div class="alert alert-info mt-3 mb-0 small">
+                            Đơn hàng được ghi nhận với trạng thái chờ xử lý.
+                            Chọn chuyển khoản ở đây chưa có nghĩa là hệ thống
+                            đã xác nhận tiền về tài khoản.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-5">
+                <div class="card">
+                    <div class="card-header fw-bold">
+                        Đơn hàng của bạn
+                    </div>
+
+                    <div class="card-body">
+                        @foreach ($cart as $item)
+                            <div class="d-flex justify-content-between gap-3 mb-3">
+                                <div>
+                                    <strong>{{ $item['name'] }}</strong>
+                                    <div class="text-muted small">
+                                        Số lượng: {{ $item['quantity'] }}
+                                    </div>
+                                </div>
+
+                                <span class="text-nowrap">
+                                    {{ number_format(
+                                        $item['price'] * $item['quantity'],
+                                        0, ',', '.'
+                                    ) }} đ
+                                </span>
+                            </div>
+                        @endforeach
+
+                        <hr>
+
+                        <div class="d-flex justify-content-between">
+                            <strong>Tổng thanh toán</strong>
+                            <strong class="text-danger fs-5">
+                                {{ number_format($total, 0, ',', '.') }} đ
+                            </strong>
+                        </div>
+
+                        <button type="submit" class="btn btn-success w-100 mt-4">
+                            Xác nhận đặt hàng
+                        </button>
+
+                        <a
+                            href="{{ route('cart.index') }}"
+                            class="btn btn-outline-secondary w-100 mt-2"
+                        >
+                            Quay lại giỏ hàng
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+    </form>
 </div>
 @endsection
