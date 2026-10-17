@@ -1,0 +1,93 @@
+erDiagram
+    categories ||--o{ products : "category_id"
+    users |o--o{ orders : "user_id nullable"
+    orders ||--o{ order_items : "order_id"
+    products |o--o{ order_items : "product_id nullable"
+    users |o..o{ personal_access_tokens : "tokenable logical only"
+
+    users {
+        bigint id PK "unsigned"
+        varchar name "255"
+        varchar email UK "255"
+        timestamp email_verified_at "nullable"
+        varchar password "255"
+        varchar role "255 default customer"
+        varchar remember_token "100 nullable"
+        timestamp created_at "nullable"
+        timestamp updated_at "nullable"
+    }
+    categories {
+        bigint id PK "unsigned"
+        varchar name UK "255"
+        varchar slug UK "255"
+        text description "nullable"
+        timestamp created_at "nullable"
+        timestamp updated_at "nullable"
+    }
+    products {
+        bigint id PK "unsigned"
+        bigint category_id FK "unsigned NOT NULL"
+        varchar name "255 not SQL unique"
+        varchar slug UK "255"
+        decimal price "15 2"
+        int quantity "signed default 0"
+        varchar image "255 nullable"
+        text description "nullable"
+        boolean is_active "default true"
+        timestamp created_at "nullable"
+        timestamp updated_at "nullable"
+    }
+    orders {
+        bigint id PK "unsigned"
+        bigint user_id FK "unsigned nullable"
+        varchar customer_name "255"
+        varchar phone "20"
+        text address
+        text note "nullable"
+        decimal total_amount "15 2 default 0"
+        varchar status "255 default pending"
+        timestamp created_at "nullable"
+        timestamp updated_at "nullable"
+    }
+    order_items {
+        bigint id PK "unsigned"
+        bigint order_id FK "unsigned NOT NULL"
+        bigint product_id FK "unsigned nullable"
+        varchar product_name "255"
+        int quantity "unsigned"
+        decimal unit_price "15 2"
+        decimal subtotal "15 2"
+        timestamp created_at "nullable"
+        timestamp updated_at "nullable"
+    }
+    personal_access_tokens {
+        bigint id PK "unsigned"
+        varchar tokenable_type "255 polymorphic index"
+        bigint tokenable_id "unsigned polymorphic index NO SQL FK"
+        varchar name "255"
+        varchar token UK "64"
+        text abilities "nullable"
+        timestamp last_used_at "nullable"
+        timestamp expires_at "nullable"
+        timestamp created_at "nullable"
+        timestamp updated_at "nullable"
+    }
+    password_reset_tokens {
+        varchar email PK "255 NO SQL FK"
+        varchar token "255"
+        timestamp created_at "nullable"
+    }
+    failed_jobs {
+        bigint id PK "unsigned"
+        varchar uuid UK "255"
+        text connection
+        text queue
+        longtext payload
+        longtext exception
+        timestamp failed_at "default CURRENT_TIMESTAMP"
+    }
+    migrations {
+        int id PK "unsigned framework migration repository"
+        varchar migration "255"
+        int batch
+    }

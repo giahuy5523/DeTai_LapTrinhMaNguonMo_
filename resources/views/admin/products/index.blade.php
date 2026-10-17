@@ -8,12 +8,6 @@
     <a href="{{ route('admin.products.create') }}" class="btn btn-primary">Thêm mới</a>
 </div>
 
-@if(session('success'))
-<div class="alert alert-success alert-dismissible fade show">
-    {{ session('success') }}
-    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-</div>
-@endif
 <!-- Form Tìm kiếm -->
     <form action="{{ route('admin.products.index') }}" method="GET" class="mb-3 d-flex gap-2">
         <input type="text"

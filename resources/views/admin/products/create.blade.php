@@ -15,8 +15,8 @@
                     @csrf
 
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Danh mục <span class="text-danger">*</span></label>
-                        <select name="category_id" class="form-select @error('category_id') is-invalid @enderror">
+                        <label for="category_id" class="form-label fw-bold">Danh mục <span class="text-danger">*</span></label>
+                        <select id="category_id" name="category_id" class="form-select @error('category_id') is-invalid @enderror" required>
                             <option value="">-- Chọn danh mục giày --</option>
                             @foreach($categories as $category)
                                 <option value="{{ $category->id }}" {{ old('category_id') == $category->id ? 'selected' : '' }}>
@@ -28,31 +28,33 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Tên giày <span class="text-danger">*</span></label>
-                        <input type="text" name="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name') }}">
+                        <label for="name" class="form-label fw-bold">Tên giày <span class="text-danger">*</span></label>
+                        <input id="name" type="text" name="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name') }}" maxlength="255" required>
                         @error('name') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label fw-bold">Giá bán (VNĐ) <span class="text-danger">*</span></label>
-                            <input type="number" name="price" class="form-control" value="{{ old('price', 0) }}" min="0">
+                            <label for="price" class="form-label fw-bold">Giá bán (VNĐ) <span class="text-danger">*</span></label>
+                            <input id="price" type="number" name="price" class="form-control @error('price') is-invalid @enderror" value="{{ old('price', 0) }}" min="0" step="0.01" max="9999999999999.99" required>
+                            @error('price') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label fw-bold">Số lượng kho <span class="text-danger">*</span></label>
-                            <input type="number" name="quantity" class="form-control" value="{{ old('quantity', 0) }}" min="0">
+                            <label for="quantity" class="form-label fw-bold">Số lượng kho <span class="text-danger">*</span></label>
+                            <input id="quantity" type="number" name="quantity" class="form-control @error('quantity') is-invalid @enderror" value="{{ old('quantity', 0) }}" min="0" step="1" max="2147483647" required>
+                            @error('quantity') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Ảnh đại diện</label>
-                        <input type="file" name="image" class="form-control @error('image') is-invalid @enderror" accept="image/*">
+                        <label for="image" class="form-label fw-bold">Ảnh đại diện</label>
+                        <input id="image" type="file" name="image" class="form-control @error('image') is-invalid @enderror" accept="image/*">
                         @error('image') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Mô tả chi tiết</label>
-                        <textarea name="description" class="form-control" rows="4">{{ old('description') }}</textarea>
+                        <label for="description" class="form-label fw-bold">Mô tả chi tiết</label>
+                        <textarea id="description" name="description" class="form-control" rows="4">{{ old('description') }}</textarea>
                     </div>
 
                     <div class="d-flex justify-content-end gap-2">

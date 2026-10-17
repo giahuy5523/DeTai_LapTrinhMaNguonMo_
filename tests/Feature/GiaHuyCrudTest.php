@@ -118,7 +118,7 @@ class GiaHuyCrudTest extends TestCase
     public function test_customer_cannot_use_admin_crud(): void
     {
         $this->actingAs(User::factory()->create(['role' => 'customer']));
-        $this->post('/admin/categories', ['name' => 'Forbidden'])->assertRedirect('/login');
+        $this->post('/admin/categories', ['name' => 'Forbidden'])->assertRedirect('/');
         $this->assertDatabaseCount('categories', 0);
     }
 }

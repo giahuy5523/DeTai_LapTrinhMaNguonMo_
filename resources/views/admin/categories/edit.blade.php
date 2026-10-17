@@ -15,16 +15,16 @@
                     @method('PUT') <!-- Bắt buộc dùng PUT để update dữ liệu -->
 
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Tên danh mục <span class="text-danger">*</span></label>
-                        <input type="text" name="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name', $category->name) }}">
+                        <label for="name" class="form-label fw-bold">Tên danh mục <span class="text-danger">*</span></label>
+                        <input id="name" type="text" name="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name', $category->name) }}" maxlength="255" required>>
                         @error('name')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Mô tả</label>
-                        <textarea name="description" class="form-control" rows="4">{{ old('description', $category->description) }}</textarea>
+                        <label for="description" class="form-label fw-bold">Mô tả</label>
+                        <textarea id="description" name="description" class="form-control" rows="4">{{ old('description', $category->description) }}</textarea>
                     </div>
 
                     <div class="d-flex justify-content-end gap-2">

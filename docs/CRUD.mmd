@@ -1,0 +1,20 @@
+flowchart TD
+    A["Khách / Customer / Admin"] --> H["Home / Store: R sản phẩm public"]
+    A --> REG["POST register: C User với role customer"]
+    A --> AUTH{"Middleware auth"}
+    AUTH -->|"Chưa đăng nhập"| LOGIN["Chuyển trang login"]
+    AUTH -->|"Đã đăng nhập"| ROLE{"Kiểm tra role"}
+    ROLE -->|"admin"| AD["AdminMiddleware"]
+    ROLE -->|"customer"| CU["CustomerMiddleware"]
+    AD --> CAT["Category: C / R / U / D"]
+    AD --> PRO["Product: C / R / U / D và ảnh"]
+    AD --> DASH["Dashboard: R số liệu"]
+    AD --> ORD["Order: R danh sách / U status"]
+    CAT -->|"FK cascade khi D"| PRO
+    CU --> CART["Session cart: C / R / U / D"]
+    CART --> CHECK["Checkout: validation + transaction + lockForUpdate"]
+    CHECK --> O["C Order"]
+    CHECK --> I["C OrderItem"]
+    CHECK --> STOCK["U Product.quantity: trừ tồn kho"]
+    CHECK --> CLEAR["Xóa session cart sau thành công"]
+    O --> SUCCESS["R mã đơn vừa đặt tại success"]
