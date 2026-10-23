@@ -7,10 +7,6 @@
 <div class="container py-4">
     <h2 class="mb-4">Thanh toán đơn hàng</h2>
 
-    @if (session('error'))
-        <div class="alert alert-danger">{{ session('error') }}</div>
-    @endif
-
     @if ($errors->any())
         <div class="alert alert-danger">
             <strong>Vui lòng kiểm tra lại:</strong>
@@ -24,6 +20,7 @@
 
     <form action="{{ route('checkout.store') }}" method="POST">
         @csrf
+        <input type="hidden" name="checkout_version" value="{{ $checkoutVersion }}">
 
         <div class="row g-4">
             <div class="col-lg-7">
@@ -42,7 +39,7 @@
                                 name="customer_name"
                                 type="text"
                                 class="form-control @error('customer_name') is-invalid @enderror"
-                                value="{{ old('customer_name') }}"
+                                value="{{ \App\Support\FormInput::old('customer_name') }}"
                                 maxlength="255"
                                 autocomplete="name"
                                 required
@@ -61,7 +58,7 @@
                                 name="phone"
                                 type="tel"
                                 class="form-control @error('phone') is-invalid @enderror"
-                                value="{{ old('phone') }}"
+                                value="{{ \App\Support\FormInput::old('phone') }}"
                                 maxlength="20"
                                 autocomplete="tel"
                                 required
@@ -81,8 +78,9 @@
                                 class="form-control @error('address') is-invalid @enderror"
                                 rows="3"
                                 autocomplete="street-address"
+                                maxlength="1000"
                                 required
-                            >{{ old('address') }}</textarea>
+                            >{{ \App\Support\FormInput::old('address') }}</textarea>
                             @error('address')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -98,7 +96,7 @@
                                 class="form-control @error('note') is-invalid @enderror"
                                 rows="2"
                                 maxlength="2000"
-                            >{{ old('note') }}</textarea>
+                            >{{ \App\Support\FormInput::old('note') }}</textarea>
                             @error('note')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -118,7 +116,7 @@
                                 type="radio"
                                 name="payment_method"
                                 value="cod"
-                                @checked(old('payment_method', 'cod') === 'cod')
+                                @checked(\App\Support\FormInput::old('payment_method', 'cod') === 'cod')
                                 required
                             >
                             <span>
@@ -136,7 +134,7 @@
         type="radio"
         name="payment_method"
         value="bank_transfer"
-        @checked(old('payment_method', 'cod') === 'bank_transfer')
+        @checked(\App\Support\FormInput::old('payment_method', 'cod') === 'bank_transfer')
         required
     >
     <span>
@@ -175,10 +173,7 @@
                                 </div>
 
                                 <span class="text-nowrap">
-                                    {{ number_format(
-                                        $item['price'] * $item['quantity'],
-                                        0, ',', '.'
-                                    ) }} đ
+                                    {{ \App\Support\Money::formattedLine($item['price'], (int) $item['quantity']) }} đ
                                 </span>
                             </div>
                         @endforeach
@@ -188,7 +183,7 @@
                         <div class="d-flex justify-content-between">
                             <strong>Tổng thanh toán</strong>
                             <strong class="text-danger fs-5">
-                                {{ number_format($total, 0, ',', '.') }} đ
+                                {{ \App\Support\Money::format($total) }} đ
                             </strong>
                         </div>
 

@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -68,10 +69,10 @@ class GiaHuyCrudTest extends TestCase
             ->assertSessionHasErrors('slug');
         $this->post('/admin/products', array_merge($data, ['name' => '!!!']))
             ->assertSessionHasErrors('slug');
-        $this->put('/admin/products/'.$product->id, $data)
+        $this->put('/admin/products/'.$product->id, $data + ['_version' => $product->fresh()->editVersion()])
             ->assertRedirect(route('admin.products.index'));
         $this->assertSame($oldImage, $product->fresh()->image);
-        $this->put('/admin/products/'.$product->id, array_merge($data, ['image' => $this->image('new.png'), 'price' => 1500000]))
+        $this->put('/admin/products/'.$product->id, array_merge($data, ['_version' => $product->fresh()->editVersion(), 'image' => $this->image('new.png'), 'price' => 1500000]))
             ->assertRedirect(route('admin.products.index'));
         $newImage = $product->fresh()->image;
         Storage::disk('public')->assertMissing($oldImage);
@@ -97,8 +98,8 @@ class GiaHuyCrudTest extends TestCase
 
     public function test_unsupported_show_routes_are_not_registered(): void
     {
-        $this->assertFalse(\Illuminate\Support\Facades\Route::has('admin.categories.show'));
-        $this->assertFalse(\Illuminate\Support\Facades\Route::has('admin.products.show'));
+        $this->assertFalse(Route::has('admin.categories.show'));
+        $this->assertFalse(Route::has('admin.products.show'));
     }
 
     public function test_description_must_be_text_and_invalid_data_is_not_saved(): void

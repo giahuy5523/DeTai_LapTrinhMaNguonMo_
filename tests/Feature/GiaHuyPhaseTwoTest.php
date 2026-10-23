@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class GiaHuyPhaseTwoTest extends TestCase
@@ -18,18 +19,20 @@ class GiaHuyPhaseTwoTest extends TestCase
     {
         $migration = require database_path('migrations/2026_10_11_150000_ensure_role_exists_on_users_table.php');
         $migration->up();
-        $this->assertTrue(\Illuminate\Support\Facades\Schema::hasColumn('users', 'role'));
-        \Illuminate\Support\Facades\Schema::table('users', function ($table) {
+        $this->assertTrue(Schema::hasColumn('users', 'role'));
+        Schema::table('users', function ($table) {
             $table->dropColumn('role');
         });
         $migration->up();
-        $this->assertTrue(\Illuminate\Support\Facades\Schema::hasColumn('users', 'role'));
+        $this->assertTrue(Schema::hasColumn('users', 'role'));
         $user = User::factory()->create();
         $this->assertSame('customer', $user->fresh()->role);
     }
+
     private function product(array $attributes = []): Product
     {
         $category = Category::firstOrCreate(['slug' => 'test-shoes'], ['name' => 'Test shoes']);
+
         return Product::create(array_merge([
             'category_id' => $category->id, 'name' => 'Visible shoe',
             'slug' => 'visible-shoe', 'price' => 1200000,
@@ -110,10 +113,10 @@ class GiaHuyPhaseTwoTest extends TestCase
         $this->assertAuthenticatedAs($customer);
         $product = $this->product();
         $this->post(route('cart.add', $product->id), ['quantity' => 2]);
-        $this->post('/checkout', [
+        $this->post('/checkout', $this->checkoutFields([
             'customer_name' => 'Test customer', 'phone' => '0900000000', 'address' => 'Test address',
             'payment_method' => 'cod',
-        ])->assertRedirect(route('checkout.success'))->assertSessionMissing('cart');
+        ]))->assertRedirect(route('checkout.success'))->assertSessionMissing('cart');
         $this->assertDatabaseHas('orders', ['user_id' => $customer->id, 'total_amount' => 2400000]);
         $this->assertDatabaseHas('order_items', ['product_id' => $product->id, 'quantity' => 2]);
         $this->assertSame(1, $product->fresh()->quantity);

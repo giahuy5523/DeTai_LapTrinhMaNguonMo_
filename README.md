@@ -1,66 +1,106 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# SneakerShop — Website bán giày thể thao
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Đồ án Lập trình mã nguồn mở. Laravel 12, PHP 8.3+ x64, MySQL/MariaDB, Blade và Bootstrap 5.
+Nhánh tích hợp: `develop`. Workflow: feature → PR → develop; `main` dành cho bản ổn định.
 
-## About Laravel
+Kiểm chứng local mới nhất: **131 tests / 2.970 assertions đạt**, R01–R08 đã xử lý.
+Xem [trạng thái QA hiện hành và phạm vi kiểm thử](docs/GD3_FINAL_QA.md).
+Các bước bàn giao/triển khai: [release checklist](docs/GD3_RELEASE_CHECKLIST.md).
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Phân công
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+| Thành viên | Phần chính |
+| --- | --- |
+| Gia Huy | Nền Laravel/DB, layout, CRUD Category/Product/ảnh, Home/Admin, dashboard, ERD/CRUD, kiểm thử tích hợp |
+| Tuấn | Đăng ký/đăng nhập/đăng xuất, role và middleware |
+| Trọng | Giỏ session, checkout, Order/OrderItem, hủy/hoàn kho |
+| Vĩ | Tìm kiếm/phân trang, lọc và trạng thái đơn |
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Môi trường
 
-## Learning Laravel
+- PHP **8.3+ x64**, Composer 2; bật PDO MySQL, PDO SQLite/SQLite3, mbstring, fileinfo, OpenSSL, cURL, XML/DOM và GD để chạy toàn bộ test ảnh.
+- MySQL/MariaDB; máy kiểm chứng dùng MariaDB 10.4.32 của XAMPP.
+- PHP 8.1 mặc định trong XAMPP cũ không chạy được lock file hiện tại.
+- Bản sửa nâng framework lên Laravel 12.70.1, Sanctum 4 và PHPUnit 11 để xử lý các advisory dependency đã xác minh. Cấu trúc Kernel/Providers/Blade được giữ; không thêm bảng nghiệp vụ.
+- Bootstrap 5.3.8 được lưu tại `public/vendor/bootstrap` kèm LICENSE; trình duyệt không cần internet để tải CSS/JS. Giao diện hiện tại không cần build Vite.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+Trên máy Gia Huy, PHP portable đã được chuẩn bị cục bộ ở `storage/app/php83` (không đưa vào Git).
+Máy khác cài PHP từ [nguồn chính thức](https://windows.php.net/download/) và thêm PHP 8.3+ vào PATH,
+hoặc đặt `PHP_BIN` trỏ đến php.exe. Không cần thay PHP/Apache của XAMPP nếu dùng PHP CLI server. Bản sửa có migration thêm orders.checkout_token nullable/unique: schema sau migrate là 9 bảng/70 cột; DB ứng dụng trên máy này chưa chạy migration đó vì chỉ được đọc trong đợt test.
+`scripts/php.ps1` chọn PHP_BIN → PHP portable của dự án → PHP trong PATH, và kiểm tra phiên bản trước khi chạy. Khi chạy artisan serve, wrapper tự thêm --no-reload để giữ đúng biến môi trường/DB cho child process Windows.
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+## Dựng ứng dụng
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 2000 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+1. Chạy `composer install` bằng PHP 8.3+. Máy đang dùng portable có thể chạy:
 
-## Laravel Sponsors
+   ```powershell
+   .\scripts\php.ps1 C:\ProgramData\ComposerSetup\bin\composer.phar install
+   ```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+2. Copy `.env.example` thành `.env` nếu chưa có. Điền kết nối DB, `APP_URL`; chạy `php artisan key:generate` **chỉ với bản cài mới chưa có APP_KEY**. Không tạo lại key của bản đang dùng.
+3. Tạo database `ban_giay_the_thao` nếu chưa có, rồi chạy `php artisan migrate:status` và `php artisan migrate`. Không dùng migrate:fresh/db:wipe trên dữ liệu ứng dụng.
+4. Chạy `php artisan storage:link` nếu `public/storage` chưa có; thư mục storage/bootstrap/cache cần quyền ghi.
+5. Chạy `php artisan serve --host=127.0.0.1 --port=8023 --no-reload` bằng đúng PHP. Với PowerShell có thể dùng `.\scripts\php.ps1 artisan serve --host=127.0.0.1 --port=8023`.
 
-### Premium Partners
+Không tự chạy DatabaseSeeder trên DB ứng dụng: seeder mặc định có tài khoản Admin mẫu.
+Việc tạo/nâng quyền Admin hoặc đổi mật khẩu phải theo sự đồng ý của trưởng nhóm.
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[OP.GG](https://op.gg)**
-- **[WebReinvent](https://webreinvent.com/?utm_source=laravel&utm_medium=github&utm_campaign=patreon-sponsors)**
-- **[Lendio](https://lendio.com)**
+## Demo tách biệt đã được cho phép
 
-## Contributing
+Tạo schema `sneakershop_gd3_test` (utf8mb4) rồi dùng một terminal riêng:
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```powershell
+$env:APP_ENV = 'testing'
+$env:DB_DATABASE = 'sneakershop_gd3_test'
+# Đặt GD3_DEMO_PASSWORD riêng, tối thiểu 12 ký tự, ngoài Git.
+.\scripts\php.ps1 artisan migrate
+.\scripts\php.ps1 artisan db:seed --class=Gd3DemoSeeder
+$env:APP_ENV = 'local'
+.\scripts\php.ps1 artisan serve --host=127.0.0.1 --port=8023
+```
 
-## Code of Conduct
+Dùng `local` khi phục vụ HTTP để CSRF hoạt động; chỉ seed với `testing` và đúng schema riêng.
+Nếu máy không chạy được artisan serve, mở server native tại đúng document root:
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```powershell
+Set-Location public
+& ..\storage\app\php83\php.exe -S 127.0.0.1:8023 ..\vendor\laravel\framework\src\Illuminate\Foundation\resources\server.php
+```
 
-## Security Vulnerabilities
+Tài khoản demo: `admin@gd3.example.test`, `customer@gd3.example.test`, `customer2@gd3.example.test`.
+Seed lại giữ nguyên tài khoản, role, mật khẩu và sản phẩm hiện có; không reset tồn kho.
+Trong phiên kiểm thử trên máy này, mật khẩu được lưu ở `storage/app/gd3-credentials.json`, chỉ cục bộ.
+Dữ liệu demo có sản phẩm còn hàng, hết hàng, ngừng bán và ảnh minh họa tự tạo.
+Chuyển khoản là demo/hướng dẫn, không xác nhận tiền tự động.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Kiểm thử
 
-## License
+```powershell
+.\scripts\php.ps1 vendor/phpunit/phpunit/phpunit
+.\scripts\php.ps1 tests/manual/deep-mysql-audit.php
+.\scripts\php.ps1 tests/manual/gd3-concurrency.php
+.\scripts\php.ps1 tests/manual/deep-lock-audit.php
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Suite mặc định force SQLite `:memory:` và có guard chặn DB khác trước RefreshDatabase.
+Script manual tự kiểm tra schema `sneakershop_gd3_test`; cần XAMPP/MySQL và dữ liệu demo đã chuẩn bị.
+Các ca biên MariaDB rollback; concurrency giữ đơn đã hủy/sản phẩm đã ẩn để đối chiếu, không xóa dữ liệu ứng dụng.
+
+Smoke test trình duyệt public/auth khi server cổng 8023 đang chạy:
+
+```powershell
+playwright-cli open http://127.0.0.1:8023 --browser=chrome
+playwright-cli --raw run-code --filename=tests/browser/smoke.js
+```
+
+Script chặn tài nguyên ngoài localhost, đo 320/390/768/1440px và kiểm tra menu mobile.
+Kiểm thử HTTP đồng thời phải dùng hai process server độc lập; không coi SQLite hoặc một server PHP đơn luồng là bằng chứng concurrency HTTP.
+
+## Tài liệu và kết quả
+
+- [Bàn giao sửa lỗi và kiểm thử GĐ3](docs/GD3_FIX_VERIFICATION.md)
+- [ERD](docs/ERD.md), [Mermaid](docs/ERD.mmd), [SVG](docs/ERD.svg)
+- [Ma trận CRUD](docs/CRUD_MATRIX.md), [luồng CRUD](docs/CRUD.mmd)
+- [Audit trước khi sửa](docs/GD3_DEEP_LOGIC_AUDIT.md)
+
+Không cần Use Case theo xác nhận của giảng viên. Slide/báo cáo thuyết trình chỉ làm khi trưởng nhóm yêu cầu.

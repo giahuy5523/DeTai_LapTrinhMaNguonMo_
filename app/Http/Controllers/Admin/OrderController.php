@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
-use App\Models\Product;
+use App\Support\OrderStock;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -14,12 +14,14 @@ class OrderController extends Controller
     // Hiển thị danh sách đơn hàng và lọc theo trạng thái
     public function index(Request $request)
     {
+        $request->validate(['status' => ['nullable', 'string', 'in:pending,processing,completed,cancelled'], 'page' => ['nullable', 'integer', 'min:1']]);
         $status = $request->input('status');
 
         $orders = Order::when($status, function ($query, $status) {
             return $query->where('status', $status);
         })
             ->latest()
+            ->orderByDesc('id')
             ->paginate(10);
 
         return view('admin.orders.index', compact('orders', 'status'));
@@ -67,8 +69,8 @@ class OrderController extends Controller
             ];
 
             if (
-                !isset($allowedTransitions[$oldStatus]) ||
-                !in_array(
+                ! isset($allowedTransitions[$oldStatus]) ||
+                ! in_array(
                     $newStatus,
                     $allowedTransitions[$oldStatus],
                     true
@@ -76,40 +78,23 @@ class OrderController extends Controller
             ) {
                 throw ValidationException::withMessages([
                     'status' => 'Không thể chuyển từ trạng thái '
-                        . $oldStatus . ' sang ' . $newStatus . '.',
+                        .$oldStatus.' sang '.$newStatus.'.',
                 ]);
             }
 
             // Chỉ hoàn kho khi đơn chuyển sang cancelled lần đầu
             if ($newStatus === 'cancelled') {
-                $items = $lockedOrder->items;
-
-                foreach ($items as $item) {
-                    if (!$item->product_id) {
-                        continue;
-                    }
-
-                    $product = Product::whereKey($item->product_id)
-                        ->lockForUpdate()
-                        ->first();
-
-                    if ($product) {
-                        $product->increment(
-                            'quantity',
-                            (int) $item->quantity
-                        );
-                    }
-                }
+                OrderStock::restore($lockedOrder);
             }
 
             // Cập nhật trạng thái sau khi kiểm tra và xử lý tồn kho
             $lockedOrder->status = $newStatus;
             $lockedOrder->save();
-        });
+        }, 3);
 
         return redirect()->back()->with(
             'success',
-            'Cập nhật trạng thái đơn hàng #' . $order->id . ' thành công!'
+            'Cập nhật trạng thái đơn hàng #'.$order->id.' thành công!'
         );
     }
 }

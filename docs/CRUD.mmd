@@ -1,6 +1,8 @@
 flowchart TD
     A["Khách / Customer / Admin"] --> H["Home / Store: R sản phẩm public"]
-    A --> REG["POST register: C User với role customer"]
+    A --> GUEST{"Middleware guest"}
+    GUEST -->|"Chưa đăng nhập"| REG["POST register: C User với role customer"]
+    GUEST -->|"Đã đăng nhập"| HOME["Chuyển về Home"]
     A --> AUTH{"Middleware auth"}
     AUTH -->|"Chưa đăng nhập"| LOGIN["Chuyển trang login"]
     AUTH -->|"Đã đăng nhập"| ROLE{"Kiểm tra role"}

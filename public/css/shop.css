@@ -1,5 +1,6 @@
 :root{--shop-accent:#c4f05a}
 body{background:#f6f7f9;color:#19212b}
+.account-name{min-width:0;max-width:100%;overflow-wrap:anywhere}
 .brand-accent{color:var(--shop-accent)}
 .shop-hero{background:#192c24;color:#fff;border-radius:24px}
 .shop-hero .lead{max-width:640px;color:#dce8de}

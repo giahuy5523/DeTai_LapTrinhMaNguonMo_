@@ -1,5 +1,10 @@
 # SneakerShop – ERD và thiết kế dữ liệu
 
+> Bản sửa GĐ3 23/10/2026 thêm orders.checkout_token (varchar 64, nullable, unique):
+> schema sau migration là 9 bảng, 70 cột và 4 FK. Đã migrate DB test riêng;
+> DB ứng dụng vẫn giữ 69 cột, migration này chưa triển khai vào DB ứng dụng.
+> Xem [kết quả sửa lỗi](GD3_FIX_VERIFICATION.md) cho hành vi hiện tại.
+
 ## Phạm vi xác minh ngày 17/10/2026
 
 Nền code: develop d68e14cb807803a8bda2d27951e6f79c33bfe367.
@@ -36,6 +41,9 @@ Chú thích nullable/default/độ dài nằm trên từng thuộc tính.
 - migrations: bảng do Laravel DatabaseMigrationRepository tạo, không phải một model nghiệp vụ hay migration create_* riêng của nhóm.
 
 ## Nguồn migration
+
+- 2026_10_23_001000_add_checkout_token_to_orders_table.php: token unique cho checkout,
+  NULL cho đơn cũ; không thêm bảng/FK hay thay đổi dữ liệu cũ.
 
 - 2014_10_12_000000_create_users_table.php
 - 2014_10_12_100000_create_password_reset_tokens_table.php

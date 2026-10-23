@@ -16,7 +16,7 @@
                class="form-control" aria-label="Tên sản phẩm cần tìm"
                placeholder="Nhập tên sản phẩm cần tìm...">
         <button type="submit" class="btn btn-primary">Tìm kiếm</button>
-        @if(request('keyword'))
+        @if(request()->filled('keyword'))
             <a href="{{ route('admin.products.index') }}" class="btn btn-outline-secondary">Xóa lọc</a>
         @endif
     </form>
@@ -50,7 +50,7 @@
                     <!-- Lấy tên danh mục từ mối quan hệ khóa ngoại -->
                     <td>{{ $product->category->name ?? 'N/A' }}</td>
                     <!-- Định dạng giá tiền VNĐ -->
-                    <td>{{ number_format($product->price, 0, ',', '.') }} VNĐ</td>
+                    <td>{{ \App\Support\Money::format($product->price) }} VNĐ</td>
                     <td>{{ $product->quantity }}</td>
                     <td class="d-flex gap-2">
                         <a href="{{ route('admin.products.edit', $product) }}" class="btn btn-sm btn-warning">Sửa</a>
