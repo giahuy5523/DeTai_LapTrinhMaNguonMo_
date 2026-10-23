@@ -2,7 +2,8 @@
 
 > Bản sửa GĐ3 23/10/2026 thêm orders.checkout_token (varchar 64, nullable, unique):
 > schema sau migration là 9 bảng, 70 cột và 4 FK. Đã migrate DB test riêng;
-> DB ứng dụng vẫn giữ 69 cột, migration này chưa triển khai vào DB ứng dụng.
+> Sau khi Gia Huy đồng ý triển khai ngày 23/10, DB ứng dụng cũng đã đạt 9 bảng/70 cột,
+> checkout_token nullable/unique; dữ liệu nghiệp vụ không đổi. Xem [biên bản](GD3_HANDOFF_STATUS.md).
 > Xem [kết quả sửa lỗi](GD3_FIX_VERIFICATION.md) cho hành vi hiện tại.
 
 ## Phạm vi xác minh ngày 17/10/2026
