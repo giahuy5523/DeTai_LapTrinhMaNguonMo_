@@ -2,7 +2,7 @@
 
 ## Bản bàn giao
 
-Đã push và mở [PR #19](https://github.com/giahuy5523/DeTai_LapTrinhMaNguonMo_/pull/19).
+Đã merge [PR #19](https://github.com/giahuy5523/DeTai_LapTrinhMaNguonMo_/pull/19) vào develop sau khi Gia Huy đồng ý.
 Xem [trạng thái bàn giao, CI và backup](GD3_HANDOFF_STATUS.md).
 
 Nhánh `codex/gia-huy-gd3` → PR vào `develop`. Không phát hành trực tiếp lên `main`.
@@ -18,14 +18,14 @@ compile Blade và audit dependency cho PR develop/main và push develop.
 - Khởi chạy PHP tại đúng public document root; không phục vụ toàn bộ thư mục repository.
 - Giữ SESSION_DRIVER=file và file lock store trên cùng máy khi dùng cấu hình hiện tại.
 
-## Migration ứng dụng — chưa thực thi
+## Migration ứng dụng — đã thực thi
 
-Database ứng dụng `ban_giay_the_thao` vẫn theo quy tắc chỉ đọc trong đợt kiểm thử.
-Migration cần triển khai là `2026_10_23_001000_add_checkout_token_to_orders_table.php`:
+Database `ban_giay_the_thao` đã được Gia Huy cho phép triển khai migration ngày 23/10.
+Migration đã chạy là `2026_10_23_001000_add_checkout_token_to_orders_table.php`:
 thêm `orders.checkout_token` nullable VARCHAR(64), UNIQUE, không sửa đơn hiện có.
 Đây là thay đổi schema từ 69 → 70 cột; số bảng/khóa ngoại giữ nguyên.
 
-Chỉ thực hiện bước ghi này sau khi trưởng nhóm xác nhận chuyển sang triển khai DB ứng dụng:
+Checklist đã dùng sau khi có xác nhận (giữ để tái kiểm tra, không chạy seed/fresh/wipe):
 
 1. Xác minh database thực tế và migrate:status, runtime PHP và code đã review.
 2. Sao lưu đầy đủ bằng mysqldump (single transaction), lưu ngoài Git, kiểm tra backup
@@ -56,5 +56,6 @@ Không chạy seeder mặc định trên DB ứng dụng vì có tài khoản Ad
 - PR đúng base develop, diff đã review, không có credentials/runtime/database dump.
 - GitHub Actions đạt hoặc báo rõ giới hạn nếu dịch vụ CI không chạy được.
 - Merge PR và triển khai schema ứng dụng là các bước chốt riêng cần xác nhận theo
-  quy tắc trưởng nhóm đã đặt. Không tự merge main.
+  quy tắc trưởng nhóm đã đặt; đã được xác nhận và hoàn tất cho PR #19/migration này.
+  Không tự merge main.
 - Chưa làm slide/Word; không tính Use Case là thiếu theo yêu cầu gốc.

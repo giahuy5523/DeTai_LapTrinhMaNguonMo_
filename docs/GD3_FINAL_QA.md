@@ -6,8 +6,8 @@ Nền `origin/develop` đã fetch: `804fdc629318b35fd17f807d27bb79cc76af2101` (H
 **Đã sửa R07, sửa thêm lỗi responsive tên tài khoản dài (R08), và hoàn thành vòng
 kiểm thử tổng hợp. Không còn ca tái hiện đã ghi nhận nào đang thất bại trong vòng này.**
 Các báo cáo audit cũ giữ bằng chứng trước sửa; dùng tài liệu này để đọc trạng thái hiện tại.
-Đã commit/push và mở [PR #19](https://github.com/giahuy5523/DeTai_LapTrinhMaNguonMo_/pull/19);
-chưa merge hoặc triển khai DB ứng dụng. [Trạng thái bàn giao và backup](GD3_HANDOFF_STATUS.md).
+Đã merge [PR #19](https://github.com/giahuy5523/DeTai_LapTrinhMaNguonMo_/pull/19) vào develop
+và triển khai migration ứng dụng sau khi Gia Huy đồng ý. [Biên bản và backup](GD3_HANDOFF_STATUS.md).
 
 ## Thay đổi trong vòng sửa tổng hợp
 
@@ -145,6 +145,6 @@ thực thi, không phải bảo đảm toán học rằng phần mềm không th
 Chưa kiểm thử MySQL 8, iOS thật hoặc tải lớn kéo dài. Server cục bộ phục vụ kiểm thử
 là port 8023, trỏ DB demo, có CSRF.
 
-GĐ3 đã có bản sửa và vòng QA local tổng hợp; chưa coi là đã phát hành lên develop/main.
-Migration checkout_token vẫn chỉ triển khai trên DB test, chưa áp dụng DB ứng dụng.
-Không tự merge hoặc ghi DB ứng dụng để thay thế bước nghiệm thu triển khai.
+GĐ3 đã tích hợp vào develop và triển khai migration checkout_token trên DB ứng dụng,
+schema 9 bảng/70 cột, dữ liệu nghiệp vụ/tài khoản không đổi. Nghiệm thu HTTP ứng dụng đạt.
+Chưa phát hành lên main hoặc hosting bên ngoài.

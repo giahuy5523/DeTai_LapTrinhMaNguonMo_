@@ -6,7 +6,7 @@ Nhánh tích hợp: `develop`. Workflow: feature → PR → develop; `main` dàn
 Kiểm chứng local mới nhất: **131 tests / 2.970 assertions đạt**, R01–R08 đã xử lý.
 Xem [trạng thái QA hiện hành và phạm vi kiểm thử](docs/GD3_FINAL_QA.md).
 Các bước bàn giao/triển khai: [release checklist](docs/GD3_RELEASE_CHECKLIST.md).
-Đã mở [PR #19 vào develop](https://github.com/giahuy5523/DeTai_LapTrinhMaNguonMo_/pull/19);
+Đã merge [PR #19 vào develop](https://github.com/giahuy5523/DeTai_LapTrinhMaNguonMo_/pull/19);
 xem [trạng thái bàn giao và backup](docs/GD3_HANDOFF_STATUS.md).
 
 ## Phân công
@@ -28,7 +28,7 @@ xem [trạng thái bàn giao và backup](docs/GD3_HANDOFF_STATUS.md).
 
 Trên máy Gia Huy, PHP portable đã được chuẩn bị cục bộ ở `storage/app/php83` (không đưa vào Git).
 Máy khác cài PHP từ [nguồn chính thức](https://windows.php.net/download/) và thêm PHP 8.3+ vào PATH,
-hoặc đặt `PHP_BIN` trỏ đến php.exe. Không cần thay PHP/Apache của XAMPP nếu dùng PHP CLI server. Bản sửa có migration thêm orders.checkout_token nullable/unique: schema sau migrate là 9 bảng/70 cột; DB ứng dụng trên máy này chưa chạy migration đó vì chỉ được đọc trong đợt test.
+hoặc đặt `PHP_BIN` trỏ đến php.exe. Không cần thay PHP/Apache của XAMPP nếu dùng PHP CLI server. Migration orders.checkout_token nullable/unique đã được triển khai trên DB ứng dụng sau khi Gia Huy đồng ý: schema hiện 9 bảng/70 cột, dữ liệu nghiệp vụ giữ nguyên.
 `scripts/php.ps1` chọn PHP_BIN → PHP portable của dự án → PHP trong PATH, và kiểm tra phiên bản trước khi chạy. Khi chạy artisan serve, wrapper tự thêm --no-reload để giữ đúng biến môi trường/DB cho child process Windows.
 
 ## Dựng ứng dụng
@@ -54,6 +54,7 @@ Tạo schema `sneakershop_gd3_test` (utf8mb4) rồi dùng một terminal riêng:
 ```powershell
 $env:APP_ENV = 'testing'
 $env:DB_DATABASE = 'sneakershop_gd3_test'
+$env:SESSION_COOKIE = 'sneakershop_gd3_demo_session'
 # Đặt GD3_DEMO_PASSWORD riêng, tối thiểu 12 ký tự, ngoài Git.
 .\scripts\php.ps1 artisan migrate
 .\scripts\php.ps1 artisan db:seed --class=Gd3DemoSeeder
