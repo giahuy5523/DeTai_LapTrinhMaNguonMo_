@@ -5,10 +5,9 @@
 @section('content')
 <div class="container">
     <h2 class="mb-4">Sản phẩm</h2>
-
-    @if (session('error'))
-        <div class="alert alert-danger">
-            {{ session('error') }}
+    @if($errors->any())
+        <div class="alert alert-danger" role="alert">
+            <ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
         </div>
     @endif
 
@@ -31,13 +30,16 @@
                         </h5>
 
                         <p class="text-danger fw-bold">
-                            {{ number_format($product->price, 0, ',', '.') }} đ
+                            {{ \App\Support\Money::format($product->price) }} đ
                         </p>
 
                         <p class="text-muted">
                             Còn {{ $product->quantity }} sản phẩm
                         </p>
 
+                        @if(auth()->check() && auth()->user()->role === 'admin')
+                            <a class="btn btn-outline-dark mt-auto" href="{{ route('admin.products.edit', $product) }}">Quản lý sản phẩm</a>
+                        @else
                         <form
                             action="{{ route('cart.add', $product->id) }}"
                             method="POST"
@@ -48,6 +50,8 @@
                             <input
                                 type="number"
                                 name="quantity"
+                                aria-label="Số lượng {{ $product->name }}"
+                                required
                                 value="1"
                                 min="1"
                                 max="{{ $product->quantity }}"
@@ -61,6 +65,7 @@
                                 Thêm vào giỏ hàng
                             </button>
                         </form>
+                        @endif
                     </div>
                 </div>
             </div>

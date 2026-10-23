@@ -18,6 +18,7 @@ class GiaHuyImageSafetyTest extends TestCase
     {
         $this->actingAs(User::factory()->create(['role' => 'admin']));
         $category = Category::create(['name' => 'Test category', 'slug' => 'test-category']);
+
         return ['category_id' => $category->id, 'name' => 'Test shoe', 'price' => 1250000, 'quantity' => 3];
     }
 
@@ -38,7 +39,7 @@ class GiaHuyImageSafetyTest extends TestCase
         $failingDisk->shouldReceive('putFileAs')->once()->andReturn(false);
         Storage::set('public', $failingDisk);
 
-        $this->put(route('admin.products.update', $product), $data + ['image' => $this->image()])
+        $this->put(route('admin.products.update', $product), $data + ['_version' => $product->fresh()->editVersion(), 'image' => $this->image()])
             ->assertSessionHasErrors('image');
         $disk->assertExists('products/old.png');
         $this->assertSame('products/old.png', $product->fresh()->image);
@@ -51,10 +52,12 @@ class GiaHuyImageSafetyTest extends TestCase
         $disk = Storage::fake('public');
         $disk->put('products/old.png', 'old-image');
         $product = Product::create($data + ['slug' => 'test-shoe', 'image' => 'products/old.png']);
-        Product::updating(function () { throw new \RuntimeException('Simulated database failure'); });
+        Product::updating(function () {
+            throw new \RuntimeException('Simulated database failure');
+        });
         $this->withoutExceptionHandling();
         try {
-            $this->put(route('admin.products.update', $product), $data + ['image' => $this->image()]);
+            $this->put(route('admin.products.update', $product), $data + ['_version' => $product->fresh()->editVersion(), 'image' => $this->image()]);
             $this->fail('Expected simulated database failure.');
         } catch (\RuntimeException $exception) {
             $this->assertSame('Simulated database failure', $exception->getMessage());
@@ -70,7 +73,9 @@ class GiaHuyImageSafetyTest extends TestCase
     {
         $data = $this->data();
         $disk = Storage::fake('public');
-        Product::creating(function () { throw new \RuntimeException('Simulated insert failure'); });
+        Product::creating(function () {
+            throw new \RuntimeException('Simulated insert failure');
+        });
         $this->withoutExceptionHandling();
         try {
             $this->post(route('admin.products.store'), $data + ['image' => $this->image()]);

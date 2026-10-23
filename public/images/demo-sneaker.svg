@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="400" viewBox="0 0 640 400" role="img" aria-labelledby="title">
+  <title id="title">Giày thể thao minh họa cho dữ liệu demo SneakerShop</title>
+  <rect width="640" height="400" rx="28" fill="#eef2ef"/>
+  <ellipse cx="320" cy="324" rx="240" ry="18" fill="#d4ddd5"/>
+  <path d="M92 265 120 151 182 172 230 225 365 242 427 265 520 273Q555 276 554 305H89Z" fill="#284a39"/>
+  <path d="m127 169 48 20 44 56-108 21Z" fill="#c4f05a"/>
+  <path d="m229 225 136 17 56 23-163-7Z" fill="#6c9276"/>
+  <path d="M88 294h467v22q0 13-20 13H101q-18 0-18-13Z" fill="#fff" stroke="#284a39" stroke-width="5"/>
+  <path d="m255 229-13 29m43-25-13 29m44-25-13 29m44-25-13 29" stroke="#fff" stroke-width="7" stroke-linecap="round"/>
+  <path d="m273 282 91-7 66 9" fill="none" stroke="#c4f05a" stroke-width="9" stroke-linecap="round"/>
+  <text x="320" y="77" text-anchor="middle" font-family="sans-serif" font-size="25" fill="#284a39">SNEAKERSHOP · DEMO</text>
+</svg>

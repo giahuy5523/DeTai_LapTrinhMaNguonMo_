@@ -47,6 +47,7 @@ erDiagram
         decimal total_amount "15 2 default 0"
         varchar status "255 default pending"
         varchar payment_method "30 default cod"
+        varchar checkout_token UK "64 nullable; idempotency"
         timestamp created_at "nullable"
         timestamp updated_at "nullable"
     }

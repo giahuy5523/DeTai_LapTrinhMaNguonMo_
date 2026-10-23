@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'SneakerShop')</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
+    <link href="{{ asset('vendor/bootstrap/bootstrap.min.css') }}" rel="stylesheet">
     <link href="{{ asset('css/shop.css') }}" rel="stylesheet">
     @stack('styles')
 </head>
@@ -29,7 +30,7 @@
                         @if(auth()->user()->role === 'admin')
                             <a class="btn btn-outline-light btn-sm" href="{{ route('admin.dashboard') }}">Quản trị</a>
                         @endif
-                        <span class="text-white small">{{ auth()->user()->name }}</span>
+                        <span class="text-white small account-name">{{ auth()->user()->name }}</span>
                         <form action="{{ route('logout') }}" method="POST">
                             @csrf
                             <button class="btn btn-light btn-sm" type="submit">Đăng xuất</button>
@@ -49,6 +50,9 @@
         @if(session('error'))
             <div class="alert alert-danger" role="alert">{{ session('error') }}</div>
         @endif
+        @if(session('warning'))
+            <div class="alert alert-warning" role="alert">{{ session('warning') }}</div>
+        @endif
         @yield('content')
     </main>
     <footer class="bg-dark text-white py-4">
@@ -57,7 +61,7 @@
             <span class="small">© {{ date('Y') }} · Website bán giày thể thao</span>
         </div>
     </footer>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ asset('vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
     @stack('scripts')
 </body>
 </html>

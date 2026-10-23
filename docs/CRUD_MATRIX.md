@@ -6,7 +6,7 @@ không có màn hình CRUD riêng cho người dùng. Không mô tả chức nă
 
 | Dữ liệu/chức năng | Khách chưa đăng nhập | Customer | Admin | Điểm vào / giới hạn thực tế |
 |---|---|---|---|---|
-| users – đăng ký | C, role luôn customer | C qua route register chưa có guest guard | C qua route register chưa có guest guard | POST /register; chưa có trang quản lý/sửa/xóa User |
+| users – đăng ký | C, role luôn customer | Không, guest guard chuyển về Home | Không, guest guard chuyển về Home | POST /register; chưa có trang quản lý/sửa/xóa User |
 | users – thông tin tài khoản | Không | R chính mình | R chính mình | Navbar tên user; GET /api/user cần auth:sanctum; không phải danh sách User |
 | categories | R gián tiếp tên danh mục sản phẩm trên Home | R gián tiếp như khách | C/R/U/D | admin.categories.*; auth + admin |
 | products | R sản phẩm public | R sản phẩm public | C/R/U/D và R public | Home/Store; admin.products.*; không có route show riêng |
@@ -32,6 +32,10 @@ không có màn hình CRUD riêng cho người dùng. Không mô tả chức nă
 - Validation: tên, unique name theo form, slug không rỗng/unique, FK danh mục, giá không âm/khớp decimal(15,2), stock nguyên không âm/khớp int, mô tả chuỗi, ảnh jpeg/png/jpg/webp tối đa 2MB.
 - Schema không có soft delete; thao tác D xóa thật. Không thực hiện thao tác xóa trên DB hiện tại trong lượt rà soát.
 - PR #16 đã tích hợp: PATCH don-hang/{id}/huy cần auth + customer, tìm đơn theo user_id và pending; hủy giữ đơn trong DB và hoàn kho một lần.
-- Auth routes chưa dùng guest middleware; tài liệu ghi đúng code, không thay đổi phần Tuấn.
+- Cập nhật GĐ3 23/10/2026: login/register dùng guest; logout dùng auth. Request cùng session được khóa bằng file cache trước khi nạp/lưu session.
+- Form sửa Product có phiên bản dữ liệu ký HMAC; từ chối form cũ và giữ token cũ khi validation lỗi. Stock phải chừa chỗ cho các đơn pending/processing có thể hoàn hàng.
+- Mô tả bị giới hạn 65.535 byte UTF-8, FK danh mục phải là một integer. Giá/tổng tính bằng số nguyên theo đơn vị nhỏ nhất và hiển thị đúng phần lẻ.
+- Checkout phát hành xác nhận riêng theo từng lần mở trang; thay đổi giỏ hoặc giá làm xác nhận cũ không còn hợp lệ. Khóa Product theo ID tăng dần, transaction retry tối đa 3 lần.
+- Xóa Category thu thập/dọn ảnh sản phẩm bị cascade; chỉ xóa file không còn Product nào tham chiếu.
 
 Nguồn sơ đồ chỉnh sửa: [CRUD.mmd](CRUD.mmd). Sơ đồ này mô tả luồng thao tác dữ liệu, không phải UML Use Case.

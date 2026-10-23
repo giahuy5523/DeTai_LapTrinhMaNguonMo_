@@ -11,6 +11,7 @@ class StoreController extends Controller
         $products = Product::where('is_active', true)
             ->where('quantity', '>', 0)
             ->latest()
+            ->orderByDesc('id')
             ->paginate(12);
 
         return view('store.index', compact('products'));

@@ -7,10 +7,6 @@
 <div class="container py-4">
     <h2 class="mb-4">Giỏ hàng của bạn</h2>
 
-    @if (session('error'))
-        <div class="alert alert-danger">{{ session('error') }}</div>
-    @endif
-
     @if ($errors->any())
         <div class="alert alert-danger">
             <ul class="mb-0">
@@ -24,7 +20,7 @@
     @if (count($cart) > 0)
         @php
             $hasUnavailableProduct = collect($cart)->contains(
-                fn ($item) => empty($item['is_active'])
+                fn ($item) => $total === null || empty($item['is_active'])
                     || (int) ($item['stock'] ?? 0) < (int) $item['quantity']
             );
         @endphp
@@ -77,7 +73,7 @@
                             </td>
 
                             <td class="text-nowrap">
-                                {{ number_format($item['price'], 0, ',', '.') }} đ
+                                {{ \App\Support\Money::format($item['price']) }} đ
                             </td>
 
                             <td>
@@ -122,10 +118,7 @@
                             </td>
 
                             <td class="text-nowrap">
-                                {{ number_format(
-                                    $item['price'] * $item['quantity'],
-                                    0, ',', '.'
-                                ) }} đ
+                                {{ \App\Support\Money::formattedLine($item['price'], (int) $item['quantity']) }} đ
                             </td>
 
                             <td>
@@ -157,7 +150,7 @@
                 <h4>
                     Tổng cộng:
                     <span class="text-danger">
-                        {{ number_format($total, 0, ',', '.') }} đ
+                        {{ \App\Support\Money::format($total) }} đ
                     </span>
                 </h4>
 
@@ -197,7 +190,7 @@
                         @elseif ($order->status === 'completed') bg-success
                         @else bg-secondary
                         @endif">
-                        {{ $order->status }}
+                        {{ ['pending' => 'Chờ xử lý', 'processing' => 'Đang xử lý', 'completed' => 'Đã hoàn thành', 'cancelled' => 'Đã hủy'][$order->status] ?? $order->status }}
                     </span>
                 </div>
 
@@ -220,7 +213,7 @@
                     <p class="mb-3">
                         <strong>Tổng tiền:</strong>
                         <span class="text-danger fw-bold">
-                            {{ number_format($order->total_amount, 0, ',', '.') }} đ
+                            {{ \App\Support\Money::format($order->total_amount) }} đ
                         </span>
                     </p>
 
@@ -230,7 +223,7 @@
                             <li>
                                 {{ $item->product_name }}
                                 × {{ $item->quantity }}
-                                — {{ number_format($item->subtotal, 0, ',', '.') }} đ
+                                — {{ \App\Support\Money::format($item->subtotal) }} đ
                             </li>
                         @endforeach
                     </ul>
@@ -239,7 +232,7 @@
                         <form
                             action="{{ route('orders.cancel', $order->id) }}"
                             method="POST"
-                            onsubmit="return confirm('Mày có chắc muốn hủy đơn hàng này không?')"
+                            onsubmit="return confirm('Bạn có chắc muốn hủy đơn hàng này không?')"
                         >
                             @csrf
                             @method('PATCH')

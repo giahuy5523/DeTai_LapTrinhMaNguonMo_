@@ -4,6 +4,12 @@ use Illuminate\Support\Str;
 
 return [
 
+    // Serialize requests sharing a session before its data is loaded/saved.
+    'block' => true,
+    'block_store' => 'file',
+    'block_lock_seconds' => 120,
+    'block_wait_seconds' => 35,
+
     /*
     |--------------------------------------------------------------------------
     | Default Session Driver

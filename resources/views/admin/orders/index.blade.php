@@ -49,7 +49,7 @@
                         <tr>
                             <td class="fw-bold">#{{ $order->id }}</td>
                             <td>{{ $order->customer_name ?? 'Khách vãng lai' }}</td>
-                            <td class="text-danger fw-bold">{{ number_format($order->total_amount ?? $order->total_price ?? 0) }} VNĐ</td>
+                            <td class="text-danger fw-bold">{{ \App\Support\Money::format($order->total_amount) }} VNĐ</td>
                             <td>
                                 @switch($order->status)
                                     @case('pending')
@@ -69,18 +69,25 @@
                                 @endswitch
                             </td>
                             <td>
-                                <!-- Form cập nhật trạng thái trực tiếp -->
+                                @php
+                                    $nextStatuses = ['pending' => ['processing', 'cancelled'], 'processing' => ['completed', 'cancelled']][$order->status] ?? [];
+                                    $labels = ['processing' => 'Đang xử lý', 'completed' => 'Đã hoàn thành', 'cancelled' => 'Đã hủy'];
+                                @endphp
+                                @if($nextStatuses)
                                 <form action="{{ route('admin.orders.updateStatus', $order->id) }}" method="POST" class="d-flex gap-2">
                                     @csrf
                                     @method('PATCH')
-                                    <select name="status" class="form-select form-select-sm">
-                                        <option value="pending" {{ $order->status == 'pending' ? 'selected' : '' }}>Chờ xử lý</option>
-                                        <option value="processing" {{ $order->status == 'processing' ? 'selected' : '' }}>Đang xử lý</option>
-                                        <option value="completed" {{ $order->status == 'completed' ? 'selected' : '' }}>Đã hoàn thành</option>
-                                        <option value="cancelled" {{ $order->status == 'cancelled' ? 'selected' : '' }}>Đã hủy</option>
+                                    <select name="status" class="form-select form-select-sm" aria-label="Trạng thái mới cho đơn {{ $order->id }}" required>
+                                        <option value="" selected disabled>Chọn trạng thái</option>
+                                        @foreach($nextStatuses as $nextStatus)
+                                            <option value="{{ $nextStatus }}">{{ $labels[$nextStatus] }}</option>
+                                        @endforeach
                                     </select>
                                     <button type="submit" class="btn btn-sm btn-primary">Lưu</button>
                                 </form>
+                                @else
+                                    <span class="text-muted small">Đơn đã kết thúc</span>
+                                @endif
                             </td>
                         </tr>
                     @empty

@@ -66,7 +66,7 @@
                 <p class="fs-5">
                     <strong>Tổng tiền:</strong>
                     <span class="text-danger fw-bold">
-                        {{ number_format($order->total_amount, 0, ',', '.') }} đ
+                        {{ \App\Support\Money::format($order->total_amount) }} đ
                     </span>
                 </p>
             </div>
