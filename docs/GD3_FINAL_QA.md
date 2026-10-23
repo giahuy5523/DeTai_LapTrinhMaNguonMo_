@@ -6,7 +6,8 @@ Nền `origin/develop` đã fetch: `804fdc629318b35fd17f807d27bb79cc76af2101` (H
 **Đã sửa R07, sửa thêm lỗi responsive tên tài khoản dài (R08), và hoàn thành vòng
 kiểm thử tổng hợp. Không còn ca tái hiện đã ghi nhận nào đang thất bại trong vòng này.**
 Các báo cáo audit cũ giữ bằng chứng trước sửa; dùng tài liệu này để đọc trạng thái hiện tại.
-Chưa commit/push/tạo PR/merge hoặc triển khai DB ứng dụng.
+Đã commit/push và mở [PR #19](https://github.com/giahuy5523/DeTai_LapTrinhMaNguonMo_/pull/19);
+chưa merge hoặc triển khai DB ứng dụng. [Trạng thái bàn giao và backup](GD3_HANDOFF_STATUS.md).
 
 ## Thay đổi trong vòng sửa tổng hợp
 

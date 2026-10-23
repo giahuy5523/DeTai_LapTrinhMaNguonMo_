@@ -2,6 +2,9 @@
 
 ## Bản bàn giao
 
+Đã push và mở [PR #19](https://github.com/giahuy5523/DeTai_LapTrinhMaNguonMo_/pull/19).
+Xem [trạng thái bàn giao, CI và backup](GD3_HANDOFF_STATUS.md).
+
 Nhánh `codex/gia-huy-gd3` → PR vào `develop`. Không phát hành trực tiếp lên `main`.
 Kết quả kiểm thử và phạm vi: [QA hiện hành](GD3_FINAL_QA.md).
 Workflow GitHub Actions chạy PHP 8.3, Composer install từ lock, PHPUnit SQLite,
@@ -27,6 +30,7 @@ Chỉ thực hiện bước ghi này sau khi trưởng nhóm xác nhận chuyể
 1. Xác minh database thực tế và migrate:status, runtime PHP và code đã review.
 2. Sao lưu đầy đủ bằng mysqldump (single transaction), lưu ngoài Git, kiểm tra backup
    có schema/bản ghi và SHA256. Không hiển thị/đưa dữ liệu tài khoản vào báo cáo.
+   Có thể chạy `php scripts/prepare-release.php` để tạo backup và preview; script không áp dụng migration.
 3. Kiểm tra SQL bằng migrate --pretend --path đúng migration mới.
 4. Chạy migrate --force --path đúng migration mới; không chạy seed/fresh/wipe.
 5. Xác minh nullable/unique, 70 cột, counts nghiệp vụ và tài khoản không đổi.

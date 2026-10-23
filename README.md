@@ -6,6 +6,8 @@ Nhánh tích hợp: `develop`. Workflow: feature → PR → develop; `main` dàn
 Kiểm chứng local mới nhất: **131 tests / 2.970 assertions đạt**, R01–R08 đã xử lý.
 Xem [trạng thái QA hiện hành và phạm vi kiểm thử](docs/GD3_FINAL_QA.md).
 Các bước bàn giao/triển khai: [release checklist](docs/GD3_RELEASE_CHECKLIST.md).
+Đã mở [PR #19 vào develop](https://github.com/giahuy5523/DeTai_LapTrinhMaNguonMo_/pull/19);
+xem [trạng thái bàn giao và backup](docs/GD3_HANDOFF_STATUS.md).
 
 ## Phân công
 
