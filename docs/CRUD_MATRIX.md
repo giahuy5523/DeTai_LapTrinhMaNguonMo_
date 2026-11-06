@@ -14,7 +14,7 @@ không có màn hình CRUD riêng cho người dùng. Không mô tả chức nă
 | giỏ hàng session | Không, chuyển login | C/R/U/D | Không, CustomerMiddleware từ chối | cart.add/index/update/remove; không có bảng carts |
 | orders | Không | C checkout; R chi tiết đơn mới nhất ở success và 10 đơn gần nhất chưa hủy ở cart; U hủy đơn pending của mình | R danh sách, U status theo bước hợp lệ | Customer không xóa đơn; cancelled/completed không đổi tiếp |
 | order_items | Không | C gián tiếp khi checkout; R items trong các đơn gần đây của mình | Chưa có UI C/R/U/D riêng | Cart truy vấn Order::with(items) giới hạn theo user_id |
-| products khi xóa Category | Không | Không | D gián tiếp do FK CASCADE | Quy tắc DB hiện có, xóa danh mục sẽ xóa sản phẩm thuộc danh mục |
+| products khi xóa Category | Không | Không | Không xóa qua UI Category | Chặn xóa danh mục còn sản phẩm; phải chuyển hoặc xóa sản phẩm trước. FK CASCADE trong DB giữ nguyên |
 | order_items khi xóa Product | Không | Không | U gián tiếp: product_id thành NULL | Giữ product_name/unit_price/subtotal lịch sử |
 | order_items khi xóa Order | Không | Không | Không có route xóa Order | FK CASCADE là quy tắc DB, không phải chức năng UI đã cung cấp |
 | bảng hệ thống | Không | Không có UI CRUD | Không có UI CRUD | migrations/password_reset_tokens/failed_jobs/personal_access_tokens do framework dùng |
@@ -36,6 +36,6 @@ không có màn hình CRUD riêng cho người dùng. Không mô tả chức nă
 - Form sửa Product có phiên bản dữ liệu ký HMAC; từ chối form cũ và giữ token cũ khi validation lỗi. Stock phải chừa chỗ cho các đơn pending/processing có thể hoàn hàng.
 - Mô tả bị giới hạn 65.535 byte UTF-8, FK danh mục phải là một integer. Giá/tổng tính bằng số nguyên theo đơn vị nhỏ nhất và hiển thị đúng phần lẻ.
 - Checkout phát hành xác nhận riêng theo từng lần mở trang; thay đổi giỏ hoặc giá làm xác nhận cũ không còn hợp lệ. Khóa Product theo ID tăng dần, transaction retry tối đa 3 lần.
-- Xóa Category thu thập/dọn ảnh sản phẩm bị cascade; chỉ xóa file không còn Product nào tham chiếu.
+- Xóa Category khóa danh mục và kiểm tra sản phẩm trong transaction; chặn danh mục còn sản phẩm, giữ nguyên sản phẩm/ảnh. Chỉ danh mục rỗng được xóa; FK CASCADE vẫn tồn tại ở mức DB.
 
 Nguồn sơ đồ chỉnh sửa: [CRUD.mmd](CRUD.mmd). Sơ đồ này mô tả luồng thao tác dữ liệu, không phải UML Use Case.

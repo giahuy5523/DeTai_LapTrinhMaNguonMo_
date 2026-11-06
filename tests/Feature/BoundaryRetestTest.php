@@ -56,7 +56,7 @@ class BoundaryRetestTest extends TestCase
         $this->assertSame(2, $product->fresh()->quantity);
     }
 
-    public function test_category_cascade_keeps_order_snapshot_and_cancellation_works(): void
+    public function test_blocked_category_deletion_keeps_order_and_cancellation_restores_stock(): void
     {
         $customer = User::factory()->create(['role' => 'customer']);
         $this->actingAs($customer);
@@ -65,14 +65,16 @@ class BoundaryRetestTest extends TestCase
         $this->post('/checkout', $this->checkoutFields($this->receiver()))->assertRedirect(route('checkout.success'));
         $order = Order::firstOrFail();
         $this->actingAs(User::factory()->create(['role' => 'admin']));
-        $this->delete(route('admin.categories.destroy', $product->category_id))->assertRedirect(route('admin.categories.index'));
-        $this->assertDatabaseCount('products', 0);
-        $this->assertDatabaseHas('order_items', ['order_id' => $order->id, 'product_id' => null,
+        $this->delete(route('admin.categories.destroy', $product->category_id))->assertRedirect(route('admin.categories.index'))
+            ->assertSessionHas('error');
+        $this->assertDatabaseHas('categories', ['id' => $product->category_id]);
+        $this->assertSame(2, $product->fresh()->quantity);
+        $this->assertDatabaseHas('order_items', ['order_id' => $order->id, 'product_id' => $product->id,
             'product_name' => 'Boundary shoe', 'subtotal' => '12.50']);
         $this->actingAs($customer)->get('/gio-hang')->assertOk()->assertSee('Boundary shoe');
         $this->patch(route('orders.cancel', $order->id))->assertRedirect(route('cart.index'));
         $this->assertSame('cancelled', $order->fresh()->status);
-        $this->assertDatabaseCount('products', 0);
+        $this->assertSame(3, $product->fresh()->quantity);
     }
 
     public function test_failed_file_cleanup_keeps_successful_database_delete_and_warns(): void
