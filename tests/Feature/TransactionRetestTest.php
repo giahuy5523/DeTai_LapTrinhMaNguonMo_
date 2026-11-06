@@ -96,26 +96,23 @@ class TransactionRetestTest extends TestCase
         $this->assertSame([4, 2147483647], [$first->fresh()->quantity, $second->fresh()->quantity]);
     }
 
-    public function test_category_delete_failure_preserves_products_and_images(): void
+    public function test_empty_category_delete_failure_preserves_category(): void
     {
-        Storage::fake('public')->put('products/retained.png', 'image');
-        $product = $this->shoe(['image' => 'products/retained.png']);
+        $category = Category::create(['name' => 'Empty', 'slug' => 'empty']);
         $this->actingAs(User::factory()->create(['role' => 'admin']));
         Category::deleting(function () {
             throw new RuntimeException('Category delete failure');
         });
         $this->withoutExceptionHandling();
         try {
-            $this->delete(route('admin.categories.destroy', $product->category_id));
+            $this->delete(route('admin.categories.destroy', $category));
             $this->fail('Failure must propagate');
         } catch (RuntimeException $exception) {
             $this->assertSame('Category delete failure', $exception->getMessage());
         } finally {
             Category::flushEventListeners();
         }
-        $this->assertDatabaseHas('products', ['id' => $product->id]);
-        $this->assertDatabaseHas('categories', ['id' => $product->category_id]);
-        Storage::disk('public')->assertExists('products/retained.png');
+        $this->assertDatabaseHas('categories', ['id' => $category->id]);
     }
 
     public function test_invalid_checkout_arrays_render_again_and_do_not_write_order(): void

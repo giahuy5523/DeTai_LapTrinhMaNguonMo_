@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Product;
 use App\Rules\SqlText;
-use App\Support\ProductImages;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -94,19 +93,20 @@ class CategoryController extends Controller
     // 6. Xử lý xóa danh mục
     public function destroy(Category $category)
     {
-        $images = DB::transaction(function () use ($category) {
+        $deleted = DB::transaction(function () use ($category) {
             $locked = Category::whereKey($category->id)->lockForUpdate()->firstOrFail();
-            $products = Product::where('category_id', $locked->id)->orderBy('id')->lockForUpdate()->get();
-            $images = $products->pluck('image')->filter()->unique()->all();
+            if (Product::where('category_id', $locked->id)->lockForUpdate()->first()) {
+                return false;
+            }
             $locked->delete();
 
-            return $images;
+            return true;
         }, 3);
-        foreach ($images as $image) {
-            ProductImages::deleteUnused($image);
+        if (! $deleted) {
+            return redirect()->route('admin.categories.index')->with('error',
+                'Không thể xóa danh mục đang có sản phẩm. Vui lòng chuyển hoặc xóa các sản phẩm trước.');
         }
 
         return redirect()->route('admin.categories.index')->with('success', 'Đã xóa danh mục!');
     }
-    // Các hàm edit, update, destroy sẽ làm tiếp theo...
 }

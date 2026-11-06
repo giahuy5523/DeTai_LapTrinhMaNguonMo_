@@ -63,15 +63,16 @@ class DeepLogicRegressionTest extends TestCase
             ->assertViewHas('total', fn ($total) => (float) $total === 300000.0);
     }
 
-    public function test_category_cascade_must_clean_product_images(): void
+    public function test_nonempty_category_deletion_preserves_product_images(): void
     {
         $this->actingAs(User::factory()->create(['role' => 'admin']));
         $disk = Storage::fake('public');
         $disk->put('products/audit.png', 'image');
         $product = $this->product(['image' => 'products/audit.png']);
-        $this->delete(route('admin.categories.destroy', $product->category_id))->assertRedirect();
-        $this->assertDatabaseMissing('products', ['id' => $product->id]);
-        $disk->assertMissing('products/audit.png');
+        $this->delete(route('admin.categories.destroy', $product->category_id))->assertRedirect()
+            ->assertSessionHas('error');
+        $this->assertDatabaseHas('products', ['id' => $product->id]);
+        $disk->assertExists('products/audit.png');
     }
 
     public function test_delete_one_demo_product_must_preserve_image_shared_by_other_products(): void
