@@ -57,6 +57,13 @@ class CartController extends Controller
         $quantity = (int) $request->input('quantity', 1);
 
         if ($quantity > $product->quantity) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Số lượng vượt quá tồn kho.',
+                ], 422);
+            }
+
             return back()->with(
                 'error',
                 'Số lượng vượt quá tồn kho.'
@@ -70,6 +77,13 @@ class CartController extends Controller
         $newQuantity = $currentQuantity + $quantity;
 
         if ($newQuantity > $product->quantity) {
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Giỏ hàng vượt quá số lượng tồn kho.',
+                ], 422);
+            }
+
             return back()->with(
                 'error',
                 'Giỏ hàng vượt quá số lượng tồn kho.'
@@ -86,9 +100,20 @@ class CartController extends Controller
             'stock' => (int) $product->quantity,
         ];
 
-        Money::total($cart);
+        $total = Money::total($cart);
         session()->put('cart', $cart);
         session()->forget('checkout_quote');
+
+        if ($request->expectsJson() || $request->ajax()) {
+            $totalCount = array_sum(array_column($cart, 'quantity'));
+            return response()->json([
+                'success' => true,
+                'message' => 'Đã thêm ' . $product->name . ' vào giỏ hàng.',
+                'cart_count' => $totalCount,
+                'cart_total' => Money::format($total),
+                'product_name' => $product->name,
+            ]);
+        }
 
         return redirect()->route('cart.index')
             ->with('success', 'Đã thêm sản phẩm vào giỏ hàng.');

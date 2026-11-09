@@ -15,7 +15,7 @@ xem [trạng thái bàn giao và backup](docs/GD3_HANDOFF_STATUS.md).
 | --- | --- |
 | Gia Huy | Nền Laravel/DB, layout, CRUD Category/Product/ảnh, Home/Admin, dashboard, ERD/CRUD, kiểm thử tích hợp |
 | Tuấn | Đăng ký/đăng nhập/đăng xuất, role và middleware |
-| Trọng | Giỏ session, checkout, Order/OrderItem, hủy/hoàn kho |
+| Trọng | Giỏ session, checkout, Order/OrderItem, hủy/hoàn kho, [luồng đặt hàng & AJAX](docs/LUONG_DAT_HANG.md) |
 | Vĩ | Tìm kiếm/phân trang, lọc và trạng thái đơn |
 
 ## Môi trường
