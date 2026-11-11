@@ -28,7 +28,9 @@
                     @auth
                         @if(auth()->user()->role === 'admin')
                             <a class="btn btn-outline-light btn-sm" href="{{ route('admin.dashboard') }}">Quản trị</a>
+                            <a class="btn btn-outline-light btn-sm" href="{{ route('admin.users.index') }}">Quản lý tài khoản</a>
                         @endif
+                        <a class="text-white text-decoration-none" href="{{ route('profile.edit') }}">Hồ sơ</a>
                         <span class="text-white small">{{ auth()->user()->name }}</span>
                         <form action="{{ route('logout') }}" method="POST">
                             @csrf
