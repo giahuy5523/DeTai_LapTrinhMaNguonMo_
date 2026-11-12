@@ -18,7 +18,7 @@
     @endif
 
     <form action="{{ route('store.index') }}" method="GET" role="search" class="row g-2 mb-4">
-        <div class="col">
+        <div class="col-12 col-sm">
             <label for="store-keyword" class="visually-hidden">Tên sản phẩm cần tìm</label>
             <input
                 type="search"
@@ -31,11 +31,11 @@
                 autocomplete="off"
             >
         </div>
-        <div class="col-auto">
+        <div class="col-12 col-sm-auto d-grid">
             <button type="submit" class="btn btn-primary">Tìm kiếm</button>
         </div>
         @if($keyword !== '')
-            <div class="col-auto">
+            <div class="col-12 col-sm-auto d-grid">
                 <a href="{{ route('store.index') }}" class="btn btn-outline-secondary">Xóa tìm kiếm</a>
             </div>
         @endif
