@@ -13,7 +13,8 @@ class StoreController extends Controller
             'keyword' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $keyword = $validated['keyword'] ?? '';
+        // Chuẩn hóa từ khóa để chuỗi chỉ chứa khoảng trắng không tạo tìm kiếm giả.
+        $keyword = trim($validated['keyword'] ?? '');
 
         $products = Product::where('is_active', true)
             ->where('quantity', '>', 0)
@@ -23,7 +24,8 @@ class StoreController extends Controller
             ->latest()
             ->orderByDesc('id')
             ->paginate(12)
-            ->appends($request->only('keyword'));
+            // Chỉ giữ từ khóa đã chuẩn hóa trong các liên kết phân trang.
+            ->appends($keyword !== '' ? ['keyword' => $keyword] : []);
 
         return view('store.index', compact('products', 'keyword'));
     }
