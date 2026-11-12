@@ -139,9 +139,16 @@
                             }
                         }
                     } catch (err) {
-                        // Fallback tải lại form nếu xảy ra sự cố mạng
-                        form.submit();
-                        return;
+                        const netErrorMsg = 'Không thể kết nối máy chủ. Vui lòng kiểm tra lại giỏ hàng trước khi thử lại.';
+                        if (toast && toastMsg) {
+                            toastMsg.textContent = netErrorMsg;
+                            if (toastIcon) toastIcon.textContent = '⚠';
+                            toastEl.classList.remove('text-bg-success');
+                            toastEl.classList.add('text-bg-danger');
+                            toast.show();
+                        } else {
+                            alert(netErrorMsg);
+                        }
                     } finally {
                         if (submitBtn) {
                             submitBtn.disabled = false;

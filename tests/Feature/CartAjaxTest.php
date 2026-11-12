@@ -96,6 +96,34 @@ class CartAjaxTest extends TestCase
             ]);
     }
 
+    public function test_ajax_cumulative_quantity_exceeding_stock_returns_422(): void
+    {
+        $this->actingAs($this->customer)
+            ->postJson('/gio-hang/them/' . $this->product->id, ['quantity' => 4])
+            ->assertOk();
+
+        $response = $this->actingAs($this->customer)
+            ->postJson('/gio-hang/them/' . $this->product->id, ['quantity' => 2]);
+
+        $response->assertStatus(422)
+            ->assertJson([
+                'success' => false,
+                'message' => 'Giỏ hàng vượt quá số lượng tồn kho.',
+            ]);
+
+        $this->assertEquals(4, session('cart')[$this->product->id]['quantity']);
+    }
+
+    public function test_layout_renders_ajax_toast_without_duplicate_form_submit_fallback(): void
+    {
+        $response = $this->actingAs($this->customer)->get('/san-pham');
+
+        $response->assertOk()
+            ->assertSee('id="navCartBadge"', false)
+            ->assertSee('id="cartToast"', false)
+            ->assertDontSee('form.submit()', false);
+    }
+
     public function test_ajax_add_to_cart_requires_authentication(): void
     {
         $response = $this->postJson('/gio-hang/them/' . $this->product->id, [
