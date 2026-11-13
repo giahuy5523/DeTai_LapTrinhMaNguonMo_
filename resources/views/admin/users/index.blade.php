@@ -1,8 +1,8 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', 'Quản lý tài khoản')
 
-@section('content')
+@section('admin-content')
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="h2 mb-0">Quản lý tài khoản</h1>
     <a class="btn btn-outline-secondary" href="{{ route('admin.products.index') }}">Quản trị sản phẩm</a>
