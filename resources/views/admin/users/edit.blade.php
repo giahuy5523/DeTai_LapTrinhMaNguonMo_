@@ -1,8 +1,8 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('title', 'Chỉnh sửa tài khoản')
 
-@section('content')
+@section('admin-content')
 <div class="row justify-content-center">
     <div class="col-lg-7">
         <div class="card shadow-sm">
