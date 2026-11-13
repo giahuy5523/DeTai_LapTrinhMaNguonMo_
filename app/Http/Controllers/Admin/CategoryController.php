@@ -4,16 +4,20 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\Product;
+use App\Rules\SqlText;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class CategoryController extends Controller
 {
     // 1. Hiển thị danh sách danh mục
     public function index()
     {
-        $categories = Category::latest()->paginate(10);
+        $categories = Category::latest()->orderByDesc('id')->paginate(10);
+
         return view('admin.categories.index', compact('categories'));
     }
 
@@ -27,14 +31,14 @@ class CategoryController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'description' => 'nullable|string',
+            'description' => ['nullable', 'string', new SqlText],
             'name' => 'required|string|max:255|unique:categories,name',
         ], [
             'name.required' => 'Tên danh mục không được để trống.',
             'name.unique' => 'Tên danh mục này đã tồn tại.',
         ]);
 
-        $request->merge(['slug' => \Illuminate\Support\Str::slug($request->name)]);
+        $request->merge(['slug' => Str::slug($request->name)]);
         $request->validate([
             'slug' => ['required', 'max:255', Rule::unique('categories', 'slug')],
         ], [
@@ -50,7 +54,8 @@ class CategoryController extends Controller
 
         return redirect()->route('admin.categories.index')->with('success', 'Thêm danh mục thành công!');
     }
-// 4. Trả về form chỉnh sửa danh mục
+
+    // 4. Trả về form chỉnh sửa danh mục
     public function edit(Category $category)
     {
         return view('admin.categories.edit', compact('category'));
@@ -61,14 +66,14 @@ class CategoryController extends Controller
     {
         $request->validate([
             // unique:categories,name,{$category->id} giúp bỏ qua check trùng lặp với chính nó
-            'description' => 'nullable|string',
-            'name' => 'required|string|max:255|unique:categories,name,' . $category->id,
+            'description' => ['nullable', 'string', new SqlText],
+            'name' => 'required|string|max:255|unique:categories,name,'.$category->id,
         ], [
             'name.required' => 'Tên danh mục không được để trống.',
             'name.unique' => 'Tên danh mục này đã tồn tại.',
         ]);
 
-        $request->merge(['slug' => \Illuminate\Support\Str::slug($request->name)]);
+        $request->merge(['slug' => Str::slug($request->name)]);
         $request->validate([
             'slug' => ['required', 'max:255', Rule::unique('categories', 'slug')->ignore($category)],
         ], [
@@ -78,7 +83,7 @@ class CategoryController extends Controller
 
         $category->update([
             'name' => $request->name,
-            'slug' => \Illuminate\Support\Str::slug($request->name),
+            'slug' => Str::slug($request->name),
             'description' => $request->description,
         ]);
 
@@ -88,8 +93,20 @@ class CategoryController extends Controller
     // 6. Xử lý xóa danh mục
     public function destroy(Category $category)
     {
-        $category->delete();
+        $deleted = DB::transaction(function () use ($category) {
+            $locked = Category::whereKey($category->id)->lockForUpdate()->firstOrFail();
+            if (Product::where('category_id', $locked->id)->lockForUpdate()->first()) {
+                return false;
+            }
+            $locked->delete();
+
+            return true;
+        }, 3);
+        if (! $deleted) {
+            return redirect()->route('admin.categories.index')->with('error',
+                'Không thể xóa danh mục đang có sản phẩm. Vui lòng chuyển hoặc xóa các sản phẩm trước.');
+        }
+
         return redirect()->route('admin.categories.index')->with('success', 'Đã xóa danh mục!');
     }
-    // Các hàm edit, update, destroy sẽ làm tiếp theo...
 }

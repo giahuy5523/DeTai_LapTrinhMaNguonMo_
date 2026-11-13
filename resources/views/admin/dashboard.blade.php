@@ -15,7 +15,7 @@
 </div>
 <div class="card border-0 p-4 mb-4">
     <span class="text-muted">Tổng giá trị đơn đã hoàn thành</span>
-    <strong class="fs-3">{{ number_format($completedRevenue, 0, ',', '.') }} đ</strong>
+    <strong class="fs-3">{{ \App\Support\Money::format($completedRevenue) }} đ</strong>
 </div>
 <div class="card border-0 p-3 p-lg-4">
     <div class="d-flex flex-wrap justify-content-between gap-2 mb-3"><h2 class="h5 mb-0">Đơn hàng gần đây</h2><a href="{{ route('admin.orders.index') }}">Xem tất cả</a></div>
@@ -24,7 +24,7 @@
             <thead><tr><th>Mã đơn</th><th>Khách hàng</th><th>Tổng tiền</th><th>Trạng thái</th></tr></thead>
             <tbody>
                 @forelse($recentOrders as $order)
-                    <tr><td>#{{ $order->id }}</td><td>{{ $order->customer_name }}</td><td>{{ number_format($order->total_amount, 0, ',', '.') }} đ</td><td>{{ ['pending' => 'Chờ xử lý', 'processing' => 'Đang xử lý', 'completed' => 'Đã hoàn thành', 'cancelled' => 'Đã hủy'][$order->status] ?? $order->status }}</td></tr>
+                    <tr><td>#{{ $order->id }}</td><td>{{ $order->customer_name }}</td><td>{{ \App\Support\Money::format($order->total_amount) }} đ</td><td>{{ ['pending' => 'Chờ xử lý', 'processing' => 'Đang xử lý', 'completed' => 'Đã hoàn thành', 'cancelled' => 'Đã hủy'][$order->status] ?? $order->status }}</td></tr>
                 @empty
                     <tr><td colspan="4" class="text-center text-muted py-4">Chưa có đơn hàng nào.</td></tr>
                 @endforelse

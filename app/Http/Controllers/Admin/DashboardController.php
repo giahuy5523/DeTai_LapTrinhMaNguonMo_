@@ -17,7 +17,7 @@ class DashboardController extends Controller
             'orderCount' => Order::count(),
             'pendingOrderCount' => Order::where('status', 'pending')->count(),
             'completedRevenue' => Order::where('status', 'completed')->sum('total_amount'),
-            'recentOrders' => Order::latest()->take(5)->get(),
+            'recentOrders' => Order::latest()->orderByDesc('id')->take(5)->get(),
         ]);
     }
 }

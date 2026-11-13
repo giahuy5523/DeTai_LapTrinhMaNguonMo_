@@ -34,7 +34,7 @@
                 <div class="card-body d-flex flex-column">
                     <p class="small text-muted mb-1">{{ $product->category->name ?? 'Khác' }}</p>
                     <h3 class="h5">{{ $product->name }}</h3>
-                    <p class="fw-bold fs-5">{{ number_format($product->price, 0, ',', '.') }} đ</p>
+                    <p class="fw-bold fs-5">{{ \App\Support\Money::format($product->price) }} đ</p>
                     @if($product->quantity < 1)
                         <button class="btn btn-secondary mt-auto" disabled>Hết hàng</button>
                     @elseif(auth()->check() && auth()->user()->role !== 'customer')

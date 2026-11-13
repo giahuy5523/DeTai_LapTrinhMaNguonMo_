@@ -1,0 +1,43 @@
+name: Laravel checks
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: laravel-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, pdo_sqlite, sqlite3, gd, fileinfo, zip
+          coverage: none
+          tools: composer:v2
+      - name: Prepare environment
+        run: cp .env.example .env
+      - name: Install locked dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Generate disposable CI key
+        run: php artisan key:generate --ansi
+      - name: Validate Composer and platform
+        run: |
+          composer validate --no-check-publish
+          composer check-platform-reqs
+      - name: Run isolated regression tests
+        run: php vendor/phpunit/phpunit/phpunit
+      - name: Compile Blade views
+        run: php artisan view:cache
+      - name: Dependency audit
+        run: composer audit --no-interaction

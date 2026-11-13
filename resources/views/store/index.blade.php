@@ -4,19 +4,42 @@
 
 @section('content')
 <div class="container">
-    <h2 class="mb-4">Sản phẩm</h2>
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <h2 class="mb-0">Sản phẩm</h2>
+        @if($keyword !== '')
+            <span class="text-muted small">Tìm thấy {{ $products->total() }} sản phẩm phù hợp</span>
+        @endif
+    </div>
 
-    @if (session('success'))
-        <div class="alert alert-success">
-            {{ session('success') }}
+    @if($errors->any())
+        <div class="alert alert-danger" role="alert">
+            <ul class="mb-0">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
         </div>
     @endif
 
-    @if (session('error'))
-        <div class="alert alert-danger">
-            {{ session('error') }}
+    <form action="{{ route('store.index') }}" method="GET" role="search" class="row g-2 mb-4">
+        <div class="col-12 col-sm">
+            <label for="store-keyword" class="visually-hidden">Tên sản phẩm cần tìm</label>
+            <input
+                type="search"
+                id="store-keyword"
+                name="keyword"
+                value="{{ $keyword }}"
+                class="form-control"
+                placeholder="Nhập tên giày bạn muốn tìm..."
+                maxlength="255"
+                autocomplete="off"
+            >
         </div>
-    @endif
+        <div class="col-12 col-sm-auto d-grid">
+            <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+        </div>
+        @if($keyword !== '')
+            <div class="col-12 col-sm-auto d-grid">
+                <a href="{{ route('store.index') }}" class="btn btn-outline-secondary">Xóa tìm kiếm</a>
+            </div>
+        @endif
+    </form>
 
     <div class="row g-4">
         @forelse ($products as $product)
@@ -37,13 +60,16 @@
                         </h5>
 
                         <p class="text-danger fw-bold">
-                            {{ number_format($product->price, 0, ',', '.') }} đ
+                            {{ \App\Support\Money::format($product->price) }} đ
                         </p>
 
                         <p class="text-muted">
                             Còn {{ $product->quantity }} sản phẩm
                         </p>
 
+                        @if(auth()->check() && auth()->user()->role === 'admin')
+                            <a class="btn btn-outline-dark mt-auto" href="{{ route('admin.products.edit', $product) }}">Quản lý sản phẩm</a>
+                        @else
                         <form
                             action="{{ route('cart.add', $product->id) }}"
                             method="POST"
@@ -54,6 +80,8 @@
                             <input
                                 type="number"
                                 name="quantity"
+                                aria-label="Số lượng {{ $product->name }}"
+                                required
                                 value="1"
                                 min="1"
                                 max="{{ $product->quantity }}"
@@ -67,20 +95,28 @@
                                 Thêm vào giỏ hàng
                             </button>
                         </form>
+                        @endif
                     </div>
                 </div>
             </div>
         @empty
             <div class="col-12">
-                <div class="alert alert-info">
-                    Chưa có sản phẩm nào đang bán.
+                <div class="alert alert-info" role="status">
+                    @if($keyword !== '')
+                        Không tìm thấy sản phẩm phù hợp với từ khóa "{{ $keyword }}".
+                        <a href="{{ route('store.index') }}" class="alert-link">Xem tất cả sản phẩm</a>.
+                    @else
+                        Chưa có sản phẩm nào đang bán.
+                    @endif
                 </div>
             </div>
         @endforelse
     </div>
 
-    <div class="mt-4">
-        {{ $products->links() }}
-    </div>
+    @if($products->hasPages())
+        <div class="mt-4">
+            {{ $products->links() }}
+        </div>
+    @endif
 </div>
 @endsection

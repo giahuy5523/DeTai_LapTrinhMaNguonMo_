@@ -28,7 +28,7 @@
 
         <div class="form-group">
             <label for="name">Họ và Tên</label>
-            <input type="text" id="name" name="name" value="{{ old('name') }}" required autofocus placeholder="Nhập họ tên...">
+            <input type="text" autocomplete="name" maxlength="255" id="name" name="name" value="{{ \App\Support\FormInput::old('name') }}" required autofocus placeholder="Nhập họ tên...">
             @error('name')
                 <div class="error">{{ $message }}</div>
             @enderror
@@ -36,7 +36,7 @@
 
         <div class="form-group">
             <label for="email">Email</label>
-            <input type="email" id="email" name="email" value="{{ old('email') }}" required placeholder="Nhập email...">
+            <input type="email" autocomplete="email" maxlength="255" id="email" name="email" value="{{ \App\Support\FormInput::old('email') }}" required placeholder="Nhập email...">
             @error('email')
                 <div class="error">{{ $message }}</div>
             @enderror
@@ -44,7 +44,8 @@
 
         <div class="form-group">
             <label for="password">Mật khẩu</label>
-            <input type="password" id="password" name="password" required placeholder="Nhập mật khẩu...">
+            <input type="password" autocomplete="new-password" minlength="6" maxlength="72" id="password" name="password" aria-describedby="password-help" required placeholder="Nhập mật khẩu...">
+            <small id="password-help">Tối thiểu 6 ký tự, tối đa 72 byte UTF-8; ký tự có dấu có thể chiếm nhiều byte.</small>
             @error('password')
                 <div class="error">{{ $message }}</div>
             @enderror
@@ -52,7 +53,7 @@
 
         <div class="form-group">
             <label for="password_confirmation">Xác nhận Mật khẩu</label>
-            <input type="password" id="password_confirmation" name="password_confirmation" required placeholder="Nhập lại mật khẩu...">
+            <input type="password" autocomplete="new-password" minlength="6" maxlength="72" id="password_confirmation" name="password_confirmation" required placeholder="Nhập lại mật khẩu...">
         </div>
 
         <button type="submit" class="btn-submit">Đăng ký</button>

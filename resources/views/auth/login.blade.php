@@ -36,7 +36,7 @@
 
         <div class="form-group">
             <label for="email">Email</label>
-            <input type="email" id="email" name="email" value="{{ old('email') }}" required autofocus placeholder="Nhập email...">
+            <input type="email" autocomplete="username" maxlength="255" id="email" name="email" value="{{ \App\Support\FormInput::old('email') }}" required autofocus placeholder="Nhập email...">
             @error('email')
                 <div class="error">{{ $message }}</div>
             @enderror
@@ -44,7 +44,7 @@
 
         <div class="form-group">
             <label for="password">Mật khẩu</label>
-            <input type="password" id="password" name="password" required placeholder="Nhập mật khẩu...">
+            <input type="password" autocomplete="current-password" id="password" name="password" required placeholder="Nhập mật khẩu...">
             @error('password')
                 <div class="error">{{ $message }}</div>
             @enderror

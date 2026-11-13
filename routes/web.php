@@ -1,24 +1,24 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\HomeController;
-use App\Http\Controllers\CartController;
-use App\Http\Controllers\StoreController;
-use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\Admin\CategoryController;
-use App\Http\Controllers\Admin\ProductController;
-use App\Http\Controllers\Admin\OrderController;
-use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\ProductController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CartController;
+use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\StoreController;
+use Illuminate\Support\Facades\Route;
 
 // --- TRANG CHỦ ---
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/san-pham', [StoreController::class, 'index'])->name('store.index');
 
 // --- ROUTES GIỎ HÀNG & CHECKOUT (Customer) ---
-Route::middleware(['auth','customer'])->group(function () {
+Route::middleware(['auth', 'customer'])->group(function () {
     Route::get('/gio-hang', [CartController::class, 'index'])->name('cart.index');
     Route::post('/gio-hang/them/{id}', [CartController::class, 'add'])->name('cart.add');
     Route::patch('/gio-hang/cap-nhat/{id}', [CartController::class, 'update'])->name('cart.update');
@@ -27,14 +27,17 @@ Route::middleware(['auth','customer'])->group(function () {
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
     Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
     Route::get('/checkout/thanh-cong', [CheckoutController::class, 'success'])->name('checkout.success');
+    Route::patch('/don-hang/{id}/huy', [CartController::class, 'cancelOrder'])
+        ->name('orders.cancel');
 });
-
 // --- ROUTES XÁC THỰC ---
-Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
-Route::post('/login', [AuthController::class, 'login']);
-Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::get('/register', [AuthController::class, 'showRegisterForm'])->name('register');
+    Route::post('/register', [AuthController::class, 'register']);
+});
+Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');

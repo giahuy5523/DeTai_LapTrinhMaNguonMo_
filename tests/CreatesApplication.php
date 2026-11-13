@@ -16,6 +16,12 @@ trait CreatesApplication
 
         $app->make(Kernel::class)->bootstrap();
 
+        $connection = $app->make('db')->connection();
+        if (! $app->environment('testing') || $connection->getDriverName() !== 'sqlite'
+            || $connection->getDatabaseName() !== ':memory:') {
+            throw new \RuntimeException('Refusing automated tests outside the isolated SQLite :memory: database. Clear application config cache first.');
+        }
+
         return $app;
     }
 }
