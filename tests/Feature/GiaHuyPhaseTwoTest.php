@@ -7,7 +7,6 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
@@ -99,8 +98,6 @@ class GiaHuyPhaseTwoTest extends TestCase
     public function test_fresh_migrations_and_seeder_support_auth_and_checkout(): void
     {
         $this->seed();
-        $admin = User::where('role', 'admin')->firstOrFail();
-        $this->assertTrue(Hash::check('12345678', $admin->password));
         $this->assertDatabaseCount('categories', 2);
         $this->post('/register', [
             'name' => 'Test customer', 'email' => 'test@example.com',

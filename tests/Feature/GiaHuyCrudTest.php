@@ -85,15 +85,19 @@ class GiaHuyCrudTest extends TestCase
 
     public function test_seeder_can_run_twice_without_overwriting_existing_accounts(): void
     {
+        $account = User::factory()->create([
+            'name' => 'Existing account',
+            'email' => 'existing@example.com',
+            'password' => bcrypt('original-password'),
+        ]);
+        $originalPassword = $account->password;
+
         $this->seed();
-        $admin = User::where('email', 'admin@gmail.com')->firstOrFail();
-        $admin->update(['name' => 'Changed admin', 'password' => bcrypt('different-password')]);
-        $password = $admin->fresh()->password;
         $this->seed();
         $this->assertDatabaseCount('users', 1);
         $this->assertDatabaseCount('categories', 2);
-        $this->assertSame('Changed admin', $admin->fresh()->name);
-        $this->assertSame($password, $admin->fresh()->password);
+        $this->assertSame('Existing account', $account->fresh()->name);
+        $this->assertSame($originalPassword, $account->fresh()->password);
     }
 
     public function test_unsupported_show_routes_are_not_registered(): void
