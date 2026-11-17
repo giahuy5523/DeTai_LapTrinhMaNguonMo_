@@ -3,7 +3,7 @@
 Đồ án Lập trình mã nguồn mở. Laravel 12, PHP 8.3+ x64, MySQL/MariaDB, Blade và Bootstrap 5.
 Nhánh tích hợp: `develop`. Workflow: feature → PR → develop; `main` dành cho bản ổn định.
 
-Kiểm chứng local mới nhất: **131 tests / 2.970 assertions đạt**, R01–R08 đã xử lý.
+Kiểm thử tích hợp ngày 17/11/2026 đạt **151 tests / 3.079 assertions**; xem báo cáo QA để đối chiếu môi trường và commit.
 Xem [trạng thái QA hiện hành và phạm vi kiểm thử](docs/GD3_FINAL_QA.md).
 Các bước bàn giao/triển khai: [release checklist](docs/GD3_RELEASE_CHECKLIST.md).
 Đã merge [PR #19 vào develop](https://github.com/giahuy5523/DeTai_LapTrinhMaNguonMo_/pull/19);
@@ -23,7 +23,7 @@ xem [trạng thái bàn giao và backup](docs/GD3_HANDOFF_STATUS.md).
 - PHP **8.3+ x64**, Composer 2; bật PDO MySQL, PDO SQLite/SQLite3, mbstring, fileinfo, OpenSSL, cURL, XML/DOM và GD để chạy toàn bộ test ảnh.
 - MySQL/MariaDB; máy kiểm chứng dùng MariaDB 10.4.32 của XAMPP.
 - PHP 8.1 mặc định trong XAMPP cũ không chạy được lock file hiện tại.
-- Bản sửa nâng framework lên Laravel 12.70.1, Sanctum 4 và PHPUnit 11 để xử lý các advisory dependency đã xác minh. Cấu trúc Kernel/Providers/Blade được giữ; không thêm bảng nghiệp vụ.
+- Bản sửa nâng framework lên Laravel 12.71.0, Sanctum 4 và PHPUnit 11 để xử lý các advisory dependency đã xác minh. Cấu trúc Kernel/Providers/Blade được giữ; không thêm bảng nghiệp vụ.
 - Bootstrap 5.3.8 được lưu tại `public/vendor/bootstrap` kèm LICENSE; trình duyệt không cần internet để tải CSS/JS. Giao diện hiện tại không cần build Vite.
 
 Trên máy Gia Huy, PHP portable đã được chuẩn bị cục bộ ở `storage/app/php83` (không đưa vào Git).
@@ -44,7 +44,7 @@ hoặc đặt `PHP_BIN` trỏ đến php.exe. Không cần thay PHP/Apache của
 4. Chạy `php artisan storage:link` nếu `public/storage` chưa có; thư mục storage/bootstrap/cache cần quyền ghi.
 5. Chạy `php artisan serve --host=127.0.0.1 --port=8023 --no-reload` bằng đúng PHP. Với PowerShell có thể dùng `.\scripts\php.ps1 artisan serve --host=127.0.0.1 --port=8023`.
 
-Không tự chạy DatabaseSeeder trên DB ứng dụng: seeder mặc định có tài khoản Admin mẫu.
+Seeder mặc định chỉ tạo danh mục mẫu. Tài khoản quản trị ứng dụng cần được cấp riêng; chỉ chạy Gd3DemoSeeder trên database demo đã xác nhận.
 Việc tạo/nâng quyền Admin hoặc đổi mật khẩu phải theo sự đồng ý của trưởng nhóm.
 
 ## Demo tách biệt đã được cho phép
@@ -72,7 +72,7 @@ Set-Location public
 
 Tài khoản demo: `admin@gd3.example.test`, `customer@gd3.example.test`, `customer2@gd3.example.test`.
 Seed lại giữ nguyên tài khoản, role, mật khẩu và sản phẩm hiện có; không reset tồn kho.
-Trong phiên kiểm thử trên máy này, mật khẩu được lưu ở `storage/app/gd3-credentials.json`, chỉ cục bộ.
+Đặt và lưu mật khẩu demo cục bộ. Xem [hướng dẫn chạy demo trên Windows](docs/DEMO_GUIDE.md).
 Dữ liệu demo có sản phẩm còn hàng, hết hàng, ngừng bán và ảnh minh họa tự tạo.
 Chuyển khoản là demo/hướng dẫn, không xác nhận tiền tự động.
 
