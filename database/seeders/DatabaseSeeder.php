@@ -3,30 +3,23 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\User;
 use App\Models\Category;
 
 class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Tạo tài khoản Admin mẫu cho Tuấn test
-        User::create([
-            'name' => 'Admin SneakerShop',
-            'email' => 'admin@gmail.com',
-            'password' => bcrypt('12345678'), // Mật khẩu mã hóa
-        ]);
+        // Do not create or promote accounts with a known default password.
+        // Administrators must be provisioned explicitly through a trusted process.
 
-        // 2. Tạo sẵn vài Danh mục mẫu cho nhóm
-        Category::create([
+        // Tạo sẵn vài Danh mục mẫu cho nhóm
+        Category::firstOrCreate(['slug' => 'nike'], [
             'name' => 'Nike',
-            'slug' => 'nike',
             'description' => 'Thương hiệu giày Nike'
         ]);
         
-        Category::create([
+        Category::firstOrCreate(['slug' => 'adidas'], [
             'name' => 'Adidas',
-            'slug' => 'adidas',
             'description' => 'Thương hiệu giày Adidas'
         ]);
         

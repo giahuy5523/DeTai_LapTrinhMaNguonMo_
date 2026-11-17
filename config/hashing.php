@@ -2,6 +2,9 @@
 
 return [
 
+    // Preserve existing hashes; account password changes are an explicit action.
+    'rehash_on_login' => false,
+
     /*
     |--------------------------------------------------------------------------
     | Default Hash Driver
