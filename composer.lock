@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "ffb6a0034a93e82362c038e85c8be62b",
+    "content-hash": "9fa1309d2fedd94d139f39bdb4fb1e1f",
     "packages": [
         {
             "name": "brick/math",
@@ -1063,16 +1063,16 @@
         },
         {
             "name": "laravel/framework",
-            "version": "v12.70.1",
+            "version": "v12.71.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/laravel/framework.git",
-                "reference": "e09fc54263d1a56cfe1709958fcbb22a4159b1e3"
+                "reference": "64dc24f5d965add4d402b4b8b64f59b561112af5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/laravel/framework/zipball/e09fc54263d1a56cfe1709958fcbb22a4159b1e3",
-                "reference": "e09fc54263d1a56cfe1709958fcbb22a4159b1e3",
+                "url": "https://api.github.com/repos/laravel/framework/zipball/64dc24f5d965add4d402b4b8b64f59b561112af5",
+                "reference": "64dc24f5d965add4d402b4b8b64f59b561112af5",
                 "shasum": ""
             },
             "require": {
@@ -1281,7 +1281,7 @@
                 "issues": "https://github.com/laravel/framework/issues",
                 "source": "https://github.com/laravel/framework"
             },
-            "time": "2026-10-21T12:55:36+00:00"
+            "time": "2026-11-03T15:08:25+00:00"
         },
         {
             "name": "laravel/prompts",
@@ -4079,8 +4079,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-11-04T08:27:22+00:00",
-            "published-time": "2026-11-04T11:28:53+00:00"
+            "time": "2026-11-04T08:27:22+00:00"
         },
         {
             "name": "symfony/http-kernel",
@@ -4199,8 +4198,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-11-04T11:26:18+00:00",
-            "published-time": "2026-11-04T11:27:47+00:00"
+            "time": "2026-11-04T11:26:18+00:00"
         },
         {
             "name": "symfony/mailer",
@@ -4373,8 +4371,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-10-28T17:57:58+00:00",
-            "published-time": "2026-10-28T18:20:24+00:00"
+            "time": "2026-10-28T17:57:58+00:00"
         },
         {
             "name": "symfony/polyfill-ctype",
@@ -5436,8 +5433,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-11-04T08:27:22+00:00",
-            "published-time": "2026-11-04T11:28:04+00:00"
+            "time": "2026-11-04T08:27:22+00:00"
         },
         {
             "name": "symfony/service-contracts",
@@ -8794,8 +8790,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-11-04T08:27:22+00:00",
-            "published-time": "2026-11-04T11:28:41+00:00"
+            "time": "2026-11-04T08:27:22+00:00"
         },
         {
             "name": "theseer/tokenizer",
@@ -8858,5 +8853,5 @@
         "php-64bit": "*"
     },
     "platform-dev": {},
-    "plugin-api-version": "2.11.0"
+    "plugin-api-version": "2.9.0"
 }
