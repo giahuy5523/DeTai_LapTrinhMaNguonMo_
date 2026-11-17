@@ -49,7 +49,7 @@ demo → xem lịch sử → Admin processing/cancel → xác nhận stock hoàn
 quantity vượt kho, form cũ và ID có số 0 đầu. Xem screenshot và script browser trong repo.
 
 Mật khẩu demo chỉ lưu cục bộ trong storage ignored. Không ghi vào PR/Git/slide.
-Không chạy seeder mặc định trên DB ứng dụng vì có tài khoản Admin mẫu.
+Seeder mặc định chỉ tạo danh mục mẫu. Gd3DemoSeeder tạo tài khoản demo trong schema kiểm thử riêng.
 
 ## Cổng bàn giao cuối
 

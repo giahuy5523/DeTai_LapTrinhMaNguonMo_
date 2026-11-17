@@ -40,6 +40,7 @@ class StoreSearchTest extends TestCase
             ->assertOk()
             ->assertSee('value="Nike"', false)
             ->assertSee('Tìm thấy 2 sản phẩm phù hợp')
+            ->assertSee('Xóa tìm kiếm')
             ->assertSee('Nike Air Max')
             ->assertSee('Nike Zoom')
             ->assertDontSee('Adidas Forum')
