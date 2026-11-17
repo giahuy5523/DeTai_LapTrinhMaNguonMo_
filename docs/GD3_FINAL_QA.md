@@ -148,3 +148,34 @@ là port 8023, trỏ DB demo, có CSRF.
 GĐ3 đã tích hợp vào develop và triển khai migration checkout_token trên DB ứng dụng,
 schema 9 bảng/70 cột, dữ liệu nghiệp vụ/tài khoản không đổi. Nghiệm thu HTTP ứng dụng đạt.
 Chưa phát hành lên main hoặc hosting bên ngoài.
+
+## 2026-11-17 — Kiểm thử tích hợp sau PR #27
+
+Bản kiểm thử là `origin/develop` tại `492f2db688a1df7774ec31a843fa61f8ad664c68`.
+[CI sau merge](https://github.com/giahuy5523/DeTai_LapTrinhMaNguonMo_/actions/runs/44099627977) đạt.
+Môi trường Windows, PHP 8.3.33, Composer 2.11.2, Laravel 12.71.0,
+PHPUnit 11.5.57, MariaDB 10.4.32 và Chrome 157 với Playwright CLI 0.1.22.
+MariaDB chạy trên instance loopback riêng, cổng 33429 và thư mục dữ liệu mới.
+Migration và seeder chạy trên schema kiểm thử `sneakershop_gd3_test`.
+
+| Kịch bản | Mong đợi và kết quả quan sát |
+| --- | --- |
+| PHPUnit trên SQLite trong bộ nhớ | `php vendor/phpunit/phpunit/phpunit` đạt 151 test, 3.079 assertions. |
+| MariaDB migration và khóa ngoại | 12 migration ở trạng thái Ran. Có 4 khóa ngoại; thử chèn sản phẩm trỏ danh mục không tồn tại nhận mã 1452. |
+| MariaDB đơn hàng, số tiền và tồn kho | Có Order/OrderItem. Giá biên 9999999999999.99 lưu chính xác. COD hai sản phẩm ghi 2420000.00 và hủy thành công; chuyển khoản demo một sản phẩm ghi 1210000.00 và sang processing. Audit dữ liệu trả 0 vi phạm ở 7 chỉ số. |
+| MariaDB rollback | Giả lập lỗi khi tạo OrderItem thứ hai. Số Order/OrderItem và tồn kho hai sản phẩm trở về giá trị trước checkout. |
+| MariaDB nhiều tiến trình | `gd3-concurrency.php` đạt 3 vòng mua sản phẩm cuối và hủy đồng thời. `deep-lock-audit.php` đạt ca khóa sản phẩm đảo thứ tự và hủy Admin/Customer. `last-unit-replay.php` trả cùng mã đơn cho hai worker, một đơn duy nhất và stock về 0 trước khi hoàn kho. |
+| Chrome khách | Trang chủ, danh sách và tìm kiếm mở được. Giỏ hàng và Admin yêu cầu đăng nhập. |
+| Chrome Customer | Đăng ký, đăng nhập, đổi tên và mật khẩu, đăng xuất rồi đăng nhập bằng mật khẩu mới. Thêm giỏ có phản hồi AJAX JSON, sửa và xóa dòng hàng. Vượt tồn kho có thông báo và giữ nguyên số lượng. Checkout COD và chuyển khoản demo đến trang thành công. Customer hủy COD đang chờ. |
+| Chrome Admin | Đăng nhập, tìm tài khoản và đổi role. Tạo, sửa, xóa danh mục và sản phẩm. Ảnh upload và ảnh thay thế trả HTTP 200, URL ảnh cũ trả 404. Đơn pending từ chối chuyển thẳng completed với HTTP 422 và chấp nhận chuyển processing. |
+| Chrome phân trang | Nhấp liên kết đang hiển thị trên trang tìm kiếm sản phẩm, sang trang 2 và giữ keyword. |
+| Chrome responsive | Đo document scrollWidth ở 390, 768, 1440 px trên trang chủ, cửa hàng, đăng nhập, đăng ký, giỏ, checkout, dashboard Admin và trang danh sách danh mục, sản phẩm, tài khoản, đơn hàng. Không ghi nhận tràn ngang toàn trang ở các viewport này. |
+
+Không ghi nhận lỗi ứng dụng cần sửa trong phạm vi đã chạy. Lượt Chrome đầu có
+bộ chọn mơ hồ và kỳ vọng sai mã HTTP của form vượt kho. Sau khi sửa kịch bản
+kiểm thử, cả 6 nhóm đều đạt. PHPUnit bảo vệ cấu hình SQLite; ca rollback
+MariaDB dùng bản kiểm thử tạm, không sửa bộ test đã commit.
+
+Giới hạn: đồng thời được xác minh bằng worker PHP kết nối MariaDB. Chưa chạy
+race qua hai HTTP server, thiết bị vật lý hoặc trình duyệt khác. Responsive là
+kết quả đo trên Chrome; chưa rà từng thành phần một cách trực quan.
