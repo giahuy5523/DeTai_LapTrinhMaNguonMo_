@@ -102,6 +102,9 @@ class CartController extends Controller
 
         $total = Money::total($cart);
         session()->put('cart', $cart);
+        if ($quote = session('checkout_quote')) {
+            app(\App\Support\StockReservationService::class)->cancel(auth()->id(), $quote['version']);
+        }
         session()->forget('checkout_quote');
 
         if ($request->expectsJson() || $request->ajax()) {
@@ -173,6 +176,9 @@ class CartController extends Controller
 
         Money::total($cart);
         session()->put('cart', $cart);
+        if ($quote = session('checkout_quote')) {
+            app(\App\Support\StockReservationService::class)->cancel(auth()->id(), $quote['version']);
+        }
         session()->forget('checkout_quote');
 
         return redirect()->route('cart.index')
@@ -188,6 +194,9 @@ class CartController extends Controller
         unset($cart[$id]);
 
         session()->put('cart', $cart);
+        if ($quote = session('checkout_quote')) {
+            app(\App\Support\StockReservationService::class)->cancel(auth()->id(), $quote['version']);
+        }
         session()->forget('checkout_quote');
 
         return redirect()->route('cart.index')
