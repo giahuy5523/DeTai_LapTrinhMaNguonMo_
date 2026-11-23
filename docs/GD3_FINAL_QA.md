@@ -179,3 +179,58 @@ MariaDB dùng bản kiểm thử tạm, không sửa bộ test đã commit.
 Giới hạn: đồng thời được xác minh bằng worker PHP kết nối MariaDB. Chưa chạy
 race qua hai HTTP server, thiết bị vật lý hoặc trình duyệt khác. Responsive là
 kết quả đo trên Chrome; chưa rà từng thành phần một cách trực quan.
+
+## Nâng cấp giữ hàng và giao diện — 24/11/2026
+
+- PHPUnit SQLite đạt 155 test / 3.088 assertions.
+- MariaDB 10.4.32, schema sneakershop_gd3_test trên instance demo cổng 33430:
+  migration reservation chạy thành công. Hai tiến trình tranh đôi cuối trả
+  accepted/rejected, quantity giữ nguyên. Lượt hết hạn không tính vào khả dụng.
+- Chrome trên localhost:8027 đăng nhập Customer, thêm giỏ AJAX, mở checkout
+  thấy 5:00, reload giữ nguyên token, đặt COD tới trang thành công.
+- Blade compile và git diff --check đạt.
+- Guard SQLite từng chặn lần chạy suite với DB_CONNECTION=mysql từ terminal.
+  Sau khi đặt đúng SQLite trong bộ nhớ, toàn bộ suite đạt.
+- Chưa xác minh đủ responsive của toàn bộ giao diện mới, chưa chạy QR mô phỏng
+  và voucher. Hai module này còn cần Trọng/Tuấn triển khai theo phân công.
+- Banner dùng ảnh Unsplash lưu local:
+  https://images.unsplash.com/photo-1542291026-7eec264c27ff
+  và https://images.unsplash.com/photo-1549298916-b41d501d3772.
+  Cần kiểm tra attribution/nguồn trước khi phân phối chính thức.
+
+### Xác minh bổ sung sau sửa consume
+
+Phát hiện nhánh tạo đơn vẫn dùng transaction cũ, đã chuyển sang consume của
+StockReservationService. Test mới xác nhận reservation có trạng thái consumed
+sau COD; hủy đơn rồi expire không hoàn kho lần hai; POST hết hạn không tạo đơn.
+Bộ hồi quy tại thời điểm chạy đạt 157 test / 3.104 assertions. Sau đó bổ sung
+hai ca nhiều sản phẩm và quyền sở hữu; toàn bộ nhóm reservation đạt 8 test /
+32 assertions. CI của PR là nguồn kết quả toàn suite cuối cùng.
+
+Chrome đo 12 tổ hợp trang chủ/cửa hàng/login/register tại 390/768/1440 px
+không tràn ngang toàn trang. Navbar tìm kiếm chuyển đúng keyword.
+
+### Chốt nghiệm thu phần Gia Huy — 24/11/2026
+
+PR #34, commit chức năng a2a7246 có CI đạt 159 test / 3.110 assertions,
+Composer audit không có advisory. Sau đó chạy lại Chrome bằng Playwright
+trực tiếp để lấy kết quả độc lập, thay cho lượt CLI trả kết quả trống.
+
+Kết quả Chrome PASS:
+- Hai tab trong cùng phiên dùng chung checkout token.
+- COD tới trang thành công và hủy đơn đang chờ thành công.
+- Giỏ hàng, checkout, trang thành công và năm trang Admin đều HTTP 200.
+- 24 tổ hợp các trang trên tại 390/768/1440 px không tràn ngang toàn trang.
+- Menu Admin mobile mở được. Đã xem ảnh chụp mobile để kiểm tra bố cục.
+- Cộng với 12 phép đo public trước đó, có tổng cộng 36 phép đo responsive.
+Ảnh bằng chứng: gia-huy-admin-mobile.png. Bảng mobile cuộn trong vùng table-responsive.
+
+Các yêu cầu server còn lại có test: nhiều sản phẩm rollback nguyên lượt giữ
+khi một món không đủ, từ chối user khác, hết hạn chính xác, consume rollback,
+COD consumed, hủy đơn và expire không hoàn kho lần hai. MariaDB hai worker
+accepted/rejected và tự loại lượt hết hạn đã đạt.
+
+Phần lập trình và kiểm tra của Gia Huy đã có bản bàn giao để review.
+Nghiệm thu sau merge trên develop và tích hợp QR/voucher của các thành viên
+là các bước tiếp theo của nhóm. Chưa chạy QR/voucher và chưa có bằng chứng
+race qua hai HTTP server. Không dùng các kết quả đó trong kết luận hiện tại.

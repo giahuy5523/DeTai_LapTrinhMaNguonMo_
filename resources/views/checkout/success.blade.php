@@ -82,6 +82,14 @@
                 </div>
             @endif
 
+            <div class="table-responsive my-4 text-start">
+                <table class="table"><caption>Sản phẩm trong đơn #{{ $order->id }}</caption>
+                    <thead><tr><th scope="col">Sản phẩm</th><th scope="col">Số lượng</th><th scope="col">Thành tiền</th></tr></thead>
+                    <tbody>@foreach($order->items as $item)
+                        <tr><td>{{ $item->product_name }}</td><td>{{ $item->quantity }}</td><td>{{ \App\Support\Money::format($item->subtotal) }} đ</td></tr>
+                    @endforeach</tbody>
+                </table>
+            </div>
             <a href="{{ route('store.index') }}" class="btn btn-primary mt-3">
                 Tiếp tục mua sắm
             </a>

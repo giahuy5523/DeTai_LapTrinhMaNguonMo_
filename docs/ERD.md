@@ -72,3 +72,28 @@ Không tạo Use Case.
 ## Đồng bộ tích hợp
 
 PR #16 đã merge vào develop. ERD bổ sung payment_method; không thêm bảng hay FK. Ma trận CRUD và test tích hợp đã cập nhật theo luồng xem/hủy đơn và trạng thái mới.
+
+## Giữ hàng 5 phút — bản nâng cấp 24/11/2026
+
+Bảng stock_reservations liên kết users (1-n) và products (1-n).
+Mỗi dòng có token VARCHAR(64), quantity, status và expires_at.
+Cặp token/product_id duy nhất. expires_at dựa trên thời gian server.
+
+StockReservationService cung cấp reserve(userId, token, cart), validate,
+consume(userId, token, cart, callback), cancel và expire.
+reserve khóa user và products tăng dần ID, đọc các lượt giữ bằng locking read.
+Chỉ lượt active với expires_at > now() tham gia tính khả dụng.
+Giữ hàng không trừ products.quantity. consume gọi callback tạo order/items
+và trừ kho trong cùng transaction, rồi chuyển lượt giữ sang consumed.
+Callback phải trả order và không thực hiện tác động ngoài database.
+Replay dùng orders.checkout_token và cùng user để lấy lại đơn đã tạo.
+
+Refresh cùng giỏ dùng lại token và thời hạn. Sửa giỏ hủy lượt cũ.
+Hết hạn quay về giỏ để xác nhận lượt mới. Hủy reservation không hoàn kho,
+vì giữ hàng chưa trừ kho. Hủy đơn dùng OrderStock hiện có để hoàn đúng một lần.
+Scheduler mỗi phút chỉ dọn trạng thái, khả dụng không phụ thuộc scheduler.
+
+Migration thêm bảng, không thay cấu trúc orders. Chạy thử migration chỉ trên
+schema demo sau khi xác minh database/cổng/thư mục dữ liệu.
+Kiểm thử MariaDB dùng tests/manual/reservation-concurrency.php và
+DB_DATABASE=sneakershop_gd3_test. SQLite dùng bộ PHPUnit hiện có.

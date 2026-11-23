@@ -4,6 +4,31 @@
 @section('title', 'Thanh toán')
 
 @section('content')
+    <div class="alert alert-info" role="status">
+        Hàng được giữ trong <strong id="reservationCountdown"></strong>.
+        <span id="reservationExpired" hidden>Lượt giữ đã hết hạn. Vui lòng quay lại giỏ hàng và thử lại.</span>
+    </div>
+    @push('scripts')
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const deadline = Date.parse(@json($reservationExpiresAt));
+        const serverNow = Date.parse(@json(now()->toIso8601String()));
+        const started = performance.now();
+        const timer = document.getElementById('reservationCountdown');
+        function tick() {
+            const seconds = Math.max(0, Math.ceil((deadline - serverNow - (performance.now() - started)) / 1000));
+            timer.textContent = Math.floor(seconds / 60) + ':' + String(seconds % 60).padStart(2, '0');
+            if (seconds === 0) {
+                document.getElementById('reservationExpired').hidden = false;
+                document.querySelectorAll('form[action$="/checkout"] button[type="submit"]').forEach(button => button.disabled = true);
+                clearInterval(interval);
+            }
+        }
+        const interval = setInterval(tick, 1000);
+        tick();
+    });
+    </script>
+    @endpush
 <div class="container py-4">
     <h2 class="mb-4">Thanh toán đơn hàng</h2>
 

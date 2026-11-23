@@ -195,8 +195,9 @@ class DeepLogicRegressionTest extends TestCase
         foreach ([$first, $second] as $product) {
             $this->post(route('cart.add', $product->id), ['quantity' => 2]);
         }
+        $fields = $this->receiver();
         $second->update(['quantity' => 1]);
-        $this->post(route('checkout.store'), $this->receiver())->assertSessionHasErrors('cart');
+        $this->post(route('checkout.store'), $fields)->assertSessionHasErrors('cart');
         $this->assertDatabaseCount('orders', 0);
         $this->assertDatabaseCount('order_items', 0);
         $this->assertSame(5, $first->fresh()->quantity);

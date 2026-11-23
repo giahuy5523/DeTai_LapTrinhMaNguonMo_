@@ -21,3 +21,56 @@ body{background:#f6f7f9;color:#19212b}
 @keyframes bump{0%{transform:scale(1)}50%{transform:scale(1.35)}100%{transform:scale(1)}}
 .toast-container{z-index:1090}
 
+
+/* Shared storefront and administration theme. */
+:root {
+    --shop-accent: #c4f05a;
+    --shop-ink: #12372a;
+    --bs-primary: #176044;
+    --bs-success: #176044;
+}
+body { font-family: "Segoe UI", Arial, sans-serif; background: #f5f7f4; color: #18352b; }
+.navbar { background: #12372a !important; padding-block: 1rem; }
+.navbar-brand { font-size: 1.6rem; letter-spacing: -.06em; }
+.navbar .container { gap: 1rem; }
+.navbar-collapse { flex-wrap: wrap; gap: .5rem; }
+.nav-search { display: flex; flex: 1 1 230px; gap: .4rem; min-width: 0; }
+.nav-search input { min-width: 0; }
+.account-name { max-width: 200px; }
+.btn { border-radius: .7rem; font-weight: 600; padding: .65rem 1.1rem; }
+.btn-sm { padding: .4rem .7rem; }
+.btn-primary, .btn-success, .btn-dark { --bs-btn-bg: #176044; --bs-btn-border-color: #176044; --bs-btn-hover-bg: #12372a; --bs-btn-hover-border-color: #12372a; --bs-btn-active-bg: #12372a; }
+.btn-outline-dark { --bs-btn-color: #12372a; --bs-btn-border-color: #b8c9bf; --bs-btn-hover-bg: #12372a; }
+.card { border-color: #e0e8e0; border-radius: 1rem; box-shadow: 0 6px 24px #12372a06; }
+.card-header { background: #edf3ed; padding: 1rem 1.25rem; border-bottom-color: #e0e8e0; }
+.card-body { padding: 1.5rem; }
+.product-card { transition: transform .2s ease, box-shadow .2s ease; }
+.product-card:hover { transform: translateY(-4px); box-shadow: 0 12px 30px #12372a12; }
+.product-image, .card-img-top { object-fit: contain; background: #edf1eb; }
+.form-control, .form-select { border-radius: .65rem; padding: .7rem .9rem; border-color: #cdd9cf; }
+.table { --bs-table-bg: transparent; --bs-table-hover-bg: #f0f5ef; vertical-align: middle; }
+.table > :not(caption) > * > * { padding: 1rem; border-bottom-color: #e5ece4; }
+.table thead { background: #edf3ed; font-size: .85rem; }
+.admin-nav .nav-link { padding: .85rem 1rem; margin-block: .15rem; }
+.stat-card { background: white; border-top: 4px solid #67a765; }
+.alert { border-radius: .85rem; overflow-wrap: anywhere; }
+footer { background: #12372a !important; }
+.auth-page { min-height: 100dvh; height: auto; padding: 2rem 1rem; background: #eaf1e8; }
+.auth-page .auth-card { border-radius: 1.4rem; padding: 2.5rem; max-width: 460px; border-top: 5px solid #176044; }
+.auth-page .btn-submit { background: #176044; border-radius: .7rem; padding: .8rem; }
+.auth-page .auth-links a { color: #176044; }
+.auth-page input { max-width: 100%; }
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+@media (max-width: 991px) {
+    .nav-search { flex-basis: 100%; margin-inline: 0 !important; }
+    .navbar-collapse > div { width: 100%; }
+    .account-name { max-width: 100%; }
+}
+@media (max-width: 575px) {
+    .card-body { padding: 1rem; }
+    .auth-page .auth-card { padding: 1.5rem; }
+}
+.hero-photo { height: 430px; object-fit: cover; }
+@media(max-width:575px) { .hero-photo { height: 280px; } }

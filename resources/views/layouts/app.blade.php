@@ -25,6 +25,11 @@
                         <li class="nav-item"><a class="nav-link {{ request()->routeIs('cart.*') ? 'active' : '' }}" href="{{ route('cart.index') }}">Giỏ hàng <span id="navCartBadge" class="badge bg-light text-dark">{{ collect(session('cart', []))->sum('quantity') }}</span></a></li>
                     @endif
                 </ul>
+                <form action="{{ route('store.index') }}" method="GET" role="search" class="nav-search my-2 mx-lg-3">
+                    <label for="nav-search" class="visually-hidden">Tìm giày</label>
+                    <input id="nav-search" name="keyword" class="form-control" placeholder="Tìm đôi giày của bạn…" value="{{ is_string(request('keyword')) ? request('keyword') : '' }}" maxlength="255">
+                    <button class="btn btn-success" type="submit" aria-label="Tìm kiếm sản phẩm">Tìm</button>
+                </form>
                 <div class="d-flex flex-wrap align-items-center gap-3 py-2">
                     @auth
                         @if(auth()->user()->role === 'admin')
@@ -32,11 +37,11 @@
                             <a class="btn btn-outline-light btn-sm" href="{{ route('admin.users.index') }}">Quản lý tài khoản</a>
                         @endif
                         <a class="text-white text-decoration-none" href="{{ route('profile.edit') }}">Hồ sơ</a>
-                        <span class="text-white small account-greeting">Xin chào, {{ auth()->user()->name }}</span>
                         <form class="m-0" action="{{ route('logout') }}" method="POST">
                             @csrf
                             <button class="btn btn-light btn-sm" type="submit">Đăng xuất</button>
                         </form>
+                        <span class="text-white small account-greeting">Xin chào, {{ auth()->user()->name }}</span>
                     @else
                         <a class="text-white text-decoration-none" href="{{ route('login') }}">Đăng nhập</a>
                         <a class="btn btn-light btn-sm" href="{{ route('register') }}">Đăng ký</a>
@@ -59,7 +64,7 @@
     </main>
     <footer class="bg-dark text-white py-4">
         <div class="container d-flex flex-wrap justify-content-between gap-2">
-            <strong>SneakerShop</strong>
+            <div><strong>SneakerShop</strong><p class="small mb-0 mt-2">Giày thể thao cho mỗi ngày năng động.</p></div><nav class="d-flex gap-3" aria-label="Liên kết cuối trang"><a class="text-white" href="{{ route('home') }}">Trang chủ</a><a class="text-white" href="{{ route('store.index') }}">Sản phẩm</a></nav>
             <span class="small">© {{ date('Y') }} · Website bán giày thể thao</span>
         </div>
     </footer>
