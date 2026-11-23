@@ -107,7 +107,7 @@ $products = [];
 for ($i = 0; $i < 2; $i++) {
     $products[] = Product::create(['category_id' => $cat->id, 'name' => 'Deep lock '.uniqid(), 'slug' => 'deep-lock-'.uniqid(), 'price' => 100000, 'quantity' => 5, 'is_active' => true]);
 }
-$users = User::whereIn('email', ['customer@gd3.example.test', 'customer2@gd3.example.test'])->get();
+$users = User::whereIn('email', ['customer1@demo.test', 'customer2@demo.test'])->get();
 $result = race([['checkout', $users[0]->id, $products[0]->id.','.$products[1]->id], ['checkout', $users[1]->id, $products[1]->id.','.$products[0]->id]]);
 echo json_encode(['case' => 'reverse_product_lock_order', 'workers' => $result]).PHP_EOL;
 if (array_column($result, 'result') !== ['accepted', 'accepted']) {
@@ -120,7 +120,7 @@ if ($orders->count() !== 2) {
 }
 
 $order = $orders->first();
-$admin = User::where('email', 'admin@gd3.example.test')->firstOrFail();
+$admin = User::where('email', 'admin@demo.test')->firstOrFail();
 $result = race([['admincancel', $admin->id, $order->id], ['cancel', $order->user_id, $order->id]]);
 if (count(array_filter($result, fn ($worker) => $worker['result'] === 'accepted')) !== 1
     || $order->fresh()->status !== 'cancelled'

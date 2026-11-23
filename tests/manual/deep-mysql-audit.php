@@ -25,8 +25,8 @@ if (DB::selectOne('SELECT DATABASE() AS db')->db !== 'sneakershop_gd3_test') {
     throw new RuntimeException('Unsafe DB');
 }
 $category = Category::where('slug', 'gd3-sneakers')->firstOrFail();
-$admin = User::where('email', 'admin@gd3.example.test')->firstOrFail();
-$customer = User::where('email', 'customer@gd3.example.test')->firstOrFail();
+$admin = User::where('email', 'admin@demo.test')->firstOrFail();
+$customer = User::where('email', 'customer1@demo.test')->firstOrFail();
 $receiver = ['customer_name' => 'Deep mysql audit', 'phone' => '0900000000', 'address' => 'Deep audit', 'payment_method' => 'cod'];
 
 function scenario(string $name, ?string $expectedError, callable $run): void
