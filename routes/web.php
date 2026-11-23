@@ -45,7 +45,7 @@ Route::middleware('auth')->group(function () {
 
 // --- NHÓM ROUTE DÀNH RIÊNG CHO ADMIN (Yêu cầu phải đăng nhập & có quyền Admin) ---
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(function () {
-    Route::resource('users', UserController::class)->except(['create', 'store', 'show']);
+    Route::resource('users', UserController::class)->except(['create', 'store']);
     // Dashboard Admin
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 

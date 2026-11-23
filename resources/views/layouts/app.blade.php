@@ -37,11 +37,11 @@
                             <a class="btn btn-outline-light btn-sm" href="{{ route('admin.users.index') }}">Quản lý tài khoản</a>
                         @endif
                         <a class="text-white text-decoration-none" href="{{ route('profile.edit') }}">Hồ sơ</a>
-
-                        <form action="{{ route('logout') }}" method="POST">
+                        <form class="m-0" action="{{ route('logout') }}" method="POST">
                             @csrf
                             <button class="btn btn-light btn-sm" type="submit">Đăng xuất</button>
                         </form>
+                        <span class="text-white small account-greeting">Xin chào, {{ auth()->user()->name }}</span>
                     @else
                         <a class="text-white text-decoration-none" href="{{ route('login') }}">Đăng nhập</a>
                         <a class="btn btn-light btn-sm" href="{{ route('register') }}">Đăng ký</a>

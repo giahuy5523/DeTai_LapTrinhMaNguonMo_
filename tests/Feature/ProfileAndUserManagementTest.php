@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Models\Order;
+use App\Models\OrderItem;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -72,6 +74,35 @@ class ProfileAndUserManagementTest extends TestCase
             'name' => $target->name, 'email' => $target->email, 'role' => 'customer',
         ])->assertRedirect(route('admin.users.index'));
         $this->assertDatabaseHas('users', ['id' => $target->id, 'role' => 'customer']);
+    }
+
+    public function test_admin_can_view_customer_order_history_and_completed_order_total(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $customer = User::factory()->create(['role' => 'customer']);
+        $completed = Order::create([
+            'user_id' => $customer->id, 'customer_name' => $customer->name,
+            'phone' => '0900000000', 'address' => 'Demo address', 'total_amount' => '1250.50',
+            'status' => 'completed',
+        ]);
+        OrderItem::create([
+            'order_id' => $completed->id, 'product_name' => 'Demo shoe', 'quantity' => 1,
+            'unit_price' => '1250.50', 'subtotal' => '1250.50',
+        ]);
+        Order::create([
+            'user_id' => $customer->id, 'customer_name' => $customer->name,
+            'phone' => '0900000000', 'address' => 'Demo address', 'total_amount' => '500.00',
+            'status' => 'cancelled',
+        ]);
+
+        $this->actingAs($admin)->get(route('admin.users.show', $customer))
+            ->assertOk()
+            ->assertSee('Demo shoe')
+            ->assertSee('1.250,50')
+            ->assertSee('Tổng số đơn hàng')
+            ->assertSee('2');
+
+        $this->actingAs($customer)->get(route('admin.users.show', $customer))->assertRedirect('/');
     }
 
     public function test_last_admin_cannot_be_demoted_or_deleted(): void
