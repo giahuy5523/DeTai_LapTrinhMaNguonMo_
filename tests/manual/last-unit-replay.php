@@ -60,7 +60,7 @@ if (($argv[1] ?? '') === 'worker') {
     }
     exit;
 }
-$user = User::where('email', 'customer@gd3.example.test')->firstOrFail();
+$user = User::where('email', 'customer1@demo.test')->firstOrFail();
 $category = Category::where('slug', 'gd3-sneakers')->firstOrFail();
 $product = Product::create(['category_id' => $category->id, 'name' => 'Replay last unit '.uniqid(),
     'slug' => 'replay-last-'.uniqid(), 'price' => '10.25', 'quantity' => 1, 'is_active' => true]);
