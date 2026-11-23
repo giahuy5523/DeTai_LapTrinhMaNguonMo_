@@ -91,8 +91,9 @@ class Gd2IntegrationTest extends TestCase
         $this->actingAs(User::factory()->create(['role' => 'customer']));
         $product = $this->product();
         $this->post(route('cart.add', $product->id), ['quantity' => 2]);
+        $fields = $this->checkoutFields(['customer_name' => 'Audit', 'phone' => '0900000000', 'address' => 'Audit address', 'payment_method' => 'cod']);
         $product->update(['quantity' => 1]);
-        $this->post(route('checkout.store'), $this->checkoutFields(['customer_name' => 'Audit', 'phone' => '0900000000', 'address' => 'Audit address', 'payment_method' => 'cod']))
+        $this->post(route('checkout.store'), $fields)
             ->assertSessionHasErrors('cart')->assertSessionHas('cart');
         $this->assertDatabaseCount('orders', 0);
         $this->assertDatabaseCount('order_items', 0);

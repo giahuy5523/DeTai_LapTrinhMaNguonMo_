@@ -18,8 +18,8 @@
         .auth-links { text-align: center; margin-top: 15px; font-size: 14px; }
         .auth-links a { color: #007bff; text-decoration: none; }
     </style>
-</head>
-<body>
+<link href="{{ asset('vendor/bootstrap/bootstrap.min.css') }}" rel="stylesheet"><link href="{{ asset('css/shop.css') }}" rel="stylesheet"></head>
+<body class="auth-page">
 
 <div class="auth-card">
     <h2>Đăng Nhập</h2>
