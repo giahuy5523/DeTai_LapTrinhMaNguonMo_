@@ -209,3 +209,28 @@ hai ca nhiều sản phẩm và quyền sở hữu; toàn bộ nhóm reservation
 
 Chrome đo 12 tổ hợp trang chủ/cửa hàng/login/register tại 390/768/1440 px
 không tràn ngang toàn trang. Navbar tìm kiếm chuyển đúng keyword.
+
+### Chốt nghiệm thu phần Gia Huy — 24/11/2026
+
+PR #34, commit chức năng a2a7246 có CI đạt 159 test / 3.110 assertions,
+Composer audit không có advisory. Sau đó chạy lại Chrome bằng Playwright
+trực tiếp để lấy kết quả độc lập, thay cho lượt CLI trả kết quả trống.
+
+Kết quả Chrome PASS:
+- Hai tab trong cùng phiên dùng chung checkout token.
+- COD tới trang thành công và hủy đơn đang chờ thành công.
+- Giỏ hàng, checkout, trang thành công và năm trang Admin đều HTTP 200.
+- 24 tổ hợp các trang trên tại 390/768/1440 px không tràn ngang toàn trang.
+- Menu Admin mobile mở được. Đã xem ảnh chụp mobile để kiểm tra bố cục.
+- Cộng với 12 phép đo public trước đó, có tổng cộng 36 phép đo responsive.
+Ảnh bằng chứng: gia-huy-admin-mobile.png. Bảng mobile cuộn trong vùng table-responsive.
+
+Các yêu cầu server còn lại có test: nhiều sản phẩm rollback nguyên lượt giữ
+khi một món không đủ, từ chối user khác, hết hạn chính xác, consume rollback,
+COD consumed, hủy đơn và expire không hoàn kho lần hai. MariaDB hai worker
+accepted/rejected và tự loại lượt hết hạn đã đạt.
+
+Phần lập trình và kiểm tra của Gia Huy đã có bản bàn giao để review.
+Nghiệm thu sau merge trên develop và tích hợp QR/voucher của các thành viên
+là các bước tiếp theo của nhóm. Chưa chạy QR/voucher và chưa có bằng chứng
+race qua hai HTTP server. Không dùng các kết quả đó trong kết luận hiện tại.
