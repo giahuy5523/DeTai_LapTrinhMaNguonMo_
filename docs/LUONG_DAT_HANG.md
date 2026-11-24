@@ -22,10 +22,12 @@ Bảng lưu trữ thông tin đơn hàng của khách hàng sau khi đặt hàng
 | `phone` | `VARCHAR(20)` | NOT NULL | Số điện thoại liên hệ nhận hàng |
 | `address` | `TEXT` | NOT NULL | Địa chỉ giao hàng chi tiết |
 | `note` | `TEXT` | NULLABLE | Ghi chú đơn hàng của khách |
-| `total_amount` | `DECIMAL(15, 2)` | NOT NULL, DEFAULT `0` | Tổng giá trị đơn hàng |
+| `total_amount` | `DECIMAL(15, 2)` | NOT NULL, DEFAULT `0` | Tổng giá trị đơn hàng cần thanh toán |
+| `subtotal_amount` | `DECIMAL(15, 2)` | NOT NULL, DEFAULT `0` | Tổng tiền hàng trước giảm giá |
+| `discount_amount` | `DECIMAL(15, 2)` | NOT NULL, DEFAULT `0` | Mức giảm giá snapshot |
 | `status` | `VARCHAR(255)` | NOT NULL, DEFAULT `'pending'` | Trạng thái đơn: `pending`, `processing`, `completed`, `cancelled` |
-| `payment_method` | `VARCHAR(30)` | NOT NULL, DEFAULT `'cod'` | Phương thức thanh toán: `cod`, `bank_transfer` |
-| `checkout_token` | `VARCHAR(64)` | NULLABLE, UNIQUE | Token idempotency chống tạo đơn trùng lặp |
+| `payment_method` | `VARCHAR(30)` | NOT NULL, DEFAULT `'cod'` | Phương thức thanh toán: `cod`, `bank_transfer` (QR mô phỏng) |
+| `checkout_token` | `VARCHAR(64)` | NULLABLE, UNIQUE | Token idempotency & khóa giữ hàng `stock_reservations.token` |
 | `created_at` | `TIMESTAMP` | NULLABLE | Thời gian tạo đơn |
 | `updated_at` | `TIMESTAMP` | NULLABLE | Thời gian cập nhật đơn |
 
@@ -83,25 +85,26 @@ sequenceDiagram
     CartCtrl->>DB: Truy vấn recentOrders (10 đơn gần nhất có status != cancelled)
     CartCtrl-->>Browser: Render view cart.index (Bảng sản phẩm, tổng tiền, đơn gần đây)
 
-    Note over Customer,Session: BƯỚC 3: TIẾN HÀNH CHECKOUT
+    Note over Customer,Session: BƯỚC 3: TIẾN HÀNH CHECKOUT & GIỮ HÀNG 5 PHÚT + QR MÔ PHỎNG
     Customer->>Browser: Nhấn "Tiến hành thanh toán"
     Browser->>CheckCtrl: GET /checkout
     CheckCtrl->>CheckCtrl: CartSnapshot::refresh() & Money::total()
-    CheckCtrl->>Session: Lưu checkout_quote (version 64 ký tự hex + HMAC snapshot)
-    CheckCtrl-->>Browser: Render view checkout.index (Form nhận hàng, tóm tắt đơn)
+    CheckCtrl->>DB: StockReservationService::reserve() / validate() (giữ hàng 5 phút theo giờ server)
+    CheckCtrl->>Session: Lưu/giữ nguyên checkout_quote (token + snapshot) khi reload
+    CheckCtrl-->>Browser: Render view checkout.index (Đếm ngược server, COD & QR mô phỏng SimulatedQr)
 
-    Note over Customer,Session: BƯỚC 4 & 5: GỬI BIỂU MẪU & TẠO ĐƠN TRONG TRANSACTION
-    Customer->>Browser: Điền thông tin nhận hàng, chọn cod/bank_transfer -> "Đặt hàng"
+    Note over Customer,Session: BƯỚC 4 & 5: GỬI BIỂU MẪU & CONSUME TRONG TRANSACTION
+    Customer->>Browser: Điền thông tin nhận hàng, chọn COD hoặc "Xác nhận thanh toán mô phỏng" (QR)
     Browser->>CheckCtrl: POST /checkout (Form data + checkout_version)
-    CheckCtrl->>CheckCtrl: Validate dữ liệu & đối chiếu checkout_quote
+    CheckCtrl->>CheckCtrl: Validate dữ liệu & đối chiếu checkout_quote (hoặc replay đơn khi giỏ đã trống)
     rect rgb(240, 248, 255)
-        Note over CheckCtrl,DB: DATABASE TRANSACTION (Tối đa 3 lần thử)
-        CheckCtrl->>DB: Khóa dòng SP theo thứ tự ID: Product::lockForUpdate()
-        CheckCtrl->>DB: Kiểm tra is_active, tồn kho và đối chiếu giá DB với giỏ
-        CheckCtrl->>DB: Tạo Order (total_amount, payment_method, checkout_token, status: pending)
+        Note over CheckCtrl,DB: StockReservationService::consume() (Cùng một DB Transaction)
+        CheckCtrl->>DB: Khóa user & products tăng dần ID: lockForUpdate()
+        CheckCtrl->>DB: Validate lượt giữ active & expires_at > now() theo giờ server
+        CheckCtrl->>DB: Tạo Order (total_amount, subtotal_amount, discount_amount, payment_method, checkout_token, status: pending)
         CheckCtrl->>DB: Tạo OrderItem (product_id, product_name, quantity, unit_price, subtotal)
         CheckCtrl->>DB: Trừ tồn kho: Product.decrement('quantity', item.quantity)
-        CheckCtrl->>DB: COMMIT TRANSACTION
+        CheckCtrl->>DB: Đánh dấu stock_reservations.status = 'consumed'
     end
 
     Note over Customer,Session: BƯỚC 6: LÀM SẠCH GIỎ & THÔNG BÁO THÀNH CÔNG
@@ -109,7 +112,7 @@ sequenceDiagram
     CheckCtrl->>Session: Lưu last_checkout_order_id
     CheckCtrl-->>Browser: 302 Redirect về /checkout/thanh-cong
     Browser->>CheckCtrl: GET /checkout/thanh-cong
-    CheckCtrl-->>Browser: Render view checkout.success (Thông tin đơn #ID)
+    CheckCtrl-->>Browser: Render view checkout.success (Tách riêng trạng thái đơn & trạng thái thanh toán mô phỏng)
 
     Note over Customer,Session: BƯỚC 7: HỦY ĐƠN HÀNG & HOÀN TỒN KHO (NẾU CẦN)
     Customer->>Browser: Nhấn "Hủy đơn" tại đơn có status = pending
@@ -168,11 +171,15 @@ sequenceDiagram
 * `Money::total($cart)` tính tổng tiền theo đơn vị xu nguyên (`cents`) để tránh sai số số thực dấu phẩy động.
 * Truy vấn tối đa 10 đơn hàng gần nhất của khách có `status != 'cancelled'` để hiển thị tại trang giỏ hàng.
 
-### Giai đoạn 3: Khởi tạo quy trình Checkout (`CheckoutController@index`)
+### Giai đoạn 3: Khởi tạo quy trình Checkout, giữ hàng 5 phút & QR mô phỏng (`CheckoutController@index`)
 * **Endpoint:** `GET /checkout`
 * Làm mới giỏ hàng qua `CartSnapshot::refresh()`. Nếu giỏ hàng trống (`empty($cart)`), chuyển hướng về `route('cart.index')` (`/gio-hang`) kèm thông báo lỗi `'Giỏ hàng của bạn đang trống.'`.
 * Tính tổng tiền `$total = Money::total($cart)`.
-* Sinh mã phiên `$checkoutVersion = bin2hex(random_bytes(32))` (64 ký tự hex) và chữ ký HMAC-SHA256 `CartSnapshot::version($cart)`, lưu vào `session('checkout_quote')` để bảo vệ form thanh toán khỏi tình trạng mở nhiều tab hoặc dữ liệu giỏ hàng bị thay đổi trước khi bấm đặt.
+* Tích hợp `StockReservationService`:
+  * Nếu `session('checkout_quote')` đã tồn tại và khớp với `CartSnapshot::version($cart)`, hệ thống kiểm tra `validate()` và gọi `reserve()` với chính token cũ để **tái sử dụng token và giữ nguyên thời hạn `expires_at` ban đầu trên server** khi khách tải lại trang.
+  * Nếu chưa có hoặc giỏ hàng vừa thay đổi, hệ thống hủy lượt giữ cũ (nếu có), sinh token mới 64 ký tự hex và gọi `reserve()` giữ hàng 5 phút theo giờ máy chủ (`now()->addMinutes(5)`).
+  * Nếu lượt giữ đã hết hạn khi tải lại trang, hệ thống hủy quote và chuyển hướng về `/gio-hang` để khách xác nhận lại khi còn hàng.
+* **Hiển thị QR mô phỏng (`App\Support\SimulatedQr`):** Tạo mã tham chiếu xác định (`QR-<12 ký tự đầu của token>`), chuỗi payload demo không dùng tài khoản thật và SVG nội tuyến ngoại tuyến; đồng bộ đếm ngược bằng mốc thời gian `serverNow` và `reservationExpiresAt` từ máy chủ. Khi chọn phương thức `bank_transfer`, nút xác nhận duy nhất hiển thị nhãn **"Xác nhận thanh toán mô phỏng"**.
 
 ### Giai đoạn 4: Xác thực & Validation biểu mẫu thanh toán (`CheckoutController@store`)
 * **Endpoint:** `POST /checkout`
@@ -183,22 +190,21 @@ sequenceDiagram
   * `address`: `required|string|max:1000`
   * `note`: `nullable|string|max:2000`
   * `payment_method`: `required|in:cod,bank_transfer`
-* Kiểm tra giỏ hàng đã chuẩn hóa và đối chiếu `hash_equals` giữa `checkout_version` gửi lên với `session('checkout_quote')` (cả `version` và `snapshot`).
+* **Replay Idempotency khi giỏ đã được xóa sau lần gửi đầu tiên:** Nếu `cart` rỗng nhưng đã tồn tại đơn hàng thuộc đúng user hiện tại với `checkout_token === checkout_version`, chuyển thẳng về `checkout.success` mà không tạo đơn mới hay trừ kho lại.
+* Nếu `cart` còn dữ liệu, kiểm tra giỏ hàng đã chuẩn hóa và đối chiếu `hash_equals` giữa `checkout_version` gửi lên với `session('checkout_quote')` (cả `version` và `snapshot`).
 
-### Giai đoạn 5: Thực thi tạo đơn và trừ tồn kho trong Database Transaction
+### Giai đoạn 5: Thực thi `StockReservationService::consume()` trong Database Transaction
 1. Sắp xếp các khóa sản phẩm trong giỏ tăng dần (`ksort($cart, SORT_NUMERIC)`) để luôn khóa các dòng `products` theo cùng một thứ tự, ngăn chặn Deadlock khi nhiều giao dịch diễn ra đồng thời.
-2. Kiểm tra Idempotency thông qua `checkout_token`: nếu đơn hàng với `checkout_token` của user hiện tại đã được tạo trước đó, trả về ngay đơn hàng đó mà không tạo đơn mới.
-3. Mở giao dịch `DB::transaction(..., 3)`:
-   * Với từng sản phẩm trong giỏ, gọi `Product::where('is_active', true)->whereKey($id)->lockForUpdate()->first()`.
-   * Kiểm tra sản phẩm còn tồn tại/đang bán, số lượng đặt `<= $product->quantity`, và giá trong DB khớp với giá lúc báo giá (`Money::cents($product->price) === Money::cents($item['price'])`).
-   * Cộng dồn `$subtotal = Money::line($product->price, $quantity)` và kiểm tra không vượt `Money::MAX_CENTS`.
-   * Tạo bản ghi `Order` với `total_amount => Money::decimal($total)`, `payment_method`, `checkout_token`, và `status => 'pending'`.
-   * Tạo các bản ghi `OrderItem` (`product_id`, `product_name`, `quantity`, `unit_price`, `subtotal`) và trừ tồn kho `$product->decrement('quantity', $item['quantity'])`.
+2. Kiểm tra Idempotency thông qua `checkout_token`: nếu đơn hàng với `checkout_token` của user hiện tại đã được tạo trước đó, trả về ngay đơn hàng đó.
+3. Gọi `StockReservationService::consume(auth()->id(), $validated['checkout_version'], $cart, fn () => ...)`:
+   * Bên trong cùng một `DB::transaction(..., 3)`, service khóa user, khóa các dòng sản phẩm tăng dần ID, gọi `validate()` kiểm tra `status === 'active'` và `expires_at > now()` theo giờ server (từ chối mọi request hết hạn bất kể đồng hồ trình duyệt), thực thi callback tạo `Order` (`total_amount`, `subtotal_amount`, `discount_amount`, `payment_method`, `checkout_token`, `status => 'pending'`), tạo `OrderItem`, trừ kho `$product->decrement('quantity', $item['quantity'])`, rồi đánh dấu các dòng trong `stock_reservations` thành `'consumed'`.
+   * Nếu lượt giữ đã hết hạn hoặc không còn active khi gửi form, controller dọn `checkout_quote` và chuyển hướng về `route('cart.index')` kèm lỗi `'cart'` để khách thử lại nếu còn hàng; không tạo đơn từ lượt giữ quá hạn.
+   * Với **COD**, đơn hàng tạo ra ở trạng thái `pending` và tồn kho đã trừ ngay; đơn COD không tự hủy sau 5 phút.
 
 ### Giai đoạn 6: Hoàn tất đơn hàng (`CheckoutController@success`)
 1. Xóa giỏ hàng và báo giá khỏi session: `session()->forget(['cart', 'checkout_quote'])` sau khi transaction đã commit thành công.
 2. Lưu `session()->put('last_checkout_order_id', $order->id)`.
-3. Điều hướng sang `GET /checkout/thanh-cong` (`checkout.success`) hiển thị thông tin đơn hàng thuộc đúng `user_id` đang đăng nhập.
+3. Điều hướng sang `GET /checkout/thanh-cong` (`checkout.success`) hiển thị thông tin đơn hàng thuộc đúng `user_id` đang đăng nhập, tách bạch **Trạng thái đơn hàng** (`Chờ xử lý` / `Đang xử lý` / `Đã hoàn thành` / `Đã hủy`) và **Trạng thái thanh toán mô phỏng** (*"Đã ghi nhận xác nhận mô phỏng — Chưa thu tiền thật"* cùng mã tham chiếu `QR-...` đối với `bank_transfer`).
 
 ### Giai đoạn 7: Quản lý trạng thái đơn, Hủy đơn & Hoàn trả tồn kho
 * **Các trạng thái đơn hàng hợp lệ:** `pending` (Chờ xử lý), `processing` (Đang xử lý), `completed` (Đã hoàn thành), `cancelled` (Đã hủy).

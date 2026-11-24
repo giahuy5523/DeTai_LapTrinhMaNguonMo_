@@ -6,9 +6,11 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Support\CartSnapshot;
 use App\Support\Money;
+use App\Support\SimulatedQr;
 use App\Support\StockReservationService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -55,9 +57,24 @@ class CheckoutController extends Controller
             }
             session()->put('checkout_quote', ['version' => $checkoutVersion, 'snapshot' => $snapshot]);
         }
-        $reservationExpiresAt = \Illuminate\Support\Carbon::parse($reservation['expires_at'])->toIso8601String();
+        $serverNowCarbon = now();
+        $expiresCarbon = Carbon::parse($reservation['expires_at']);
+        $reservationExpiresAt = $expiresCarbon->toIso8601String();
+        $reservationExpiresLabel = $expiresCarbon->format('H:i:s d/m/Y');
+        $serverNow = $serverNowCarbon->toIso8601String();
+        $qrReference = SimulatedQr::reference($checkoutVersion);
+        $qrSvg = SimulatedQr::svg($qrReference, $total);
 
-        return view('checkout.index', compact('cart', 'total', 'checkoutVersion', 'reservationExpiresAt'));
+        return view('checkout.index', compact(
+            'cart',
+            'total',
+            'checkoutVersion',
+            'reservationExpiresAt',
+            'reservationExpiresLabel',
+            'serverNow',
+            'qrReference',
+            'qrSvg'
+        ));
     }
 
     // Xử lý đặt hàng
@@ -79,6 +96,17 @@ class CheckoutController extends Controller
         $cart = session()->get('cart', []);
 
         if (empty($cart)) {
+            $replayedOrder = Order::where('checkout_token', $validated['checkout_version'])
+                ->where('user_id', auth()->id())
+                ->first();
+            if ($replayedOrder) {
+                session()->put('last_checkout_order_id', $replayedOrder->id);
+
+                return redirect()->route('checkout.success')
+                    ->with('success', 'Đặt hàng thành công!')
+                    ->with('order_id', $replayedOrder->id);
+            }
+
             return redirect()->route('cart.index')
                 ->with('error', 'Giỏ hàng của bạn đang trống.');
         }
@@ -164,6 +192,8 @@ class CheckoutController extends Controller
                         'address' => $validated['address'],
                         'note' => $validated['note'] ?? null,
                         'total_amount' => Money::decimal($total),
+                        'subtotal_amount' => Money::decimal($total),
+                        'discount_amount' => '0.00',
                         'payment_method' => $validated['payment_method'],
                         'checkout_token' => $validated['checkout_version'],
                         'status' => 'pending',
@@ -196,6 +226,22 @@ class CheckoutController extends Controller
             $duplicate = Order::where('checkout_token', $validated['checkout_version'])
                 ->where('user_id', auth()->id())->first();
             if (! $duplicate) {
+                if ($exception instanceof ValidationException) {
+                    $expiredOrInactive = DB::table('stock_reservations')
+                        ->where('user_id', auth()->id())
+                        ->where('token', $validated['checkout_version'])
+                        ->where(function ($query) {
+                            $query->where('status', '!=', 'active')
+                                ->orWhere('expires_at', '<=', now());
+                        })
+                        ->exists();
+                    if ($expiredOrInactive) {
+                        app(StockReservationService::class)->cancel(auth()->id(), $validated['checkout_version']);
+                        session()->forget('checkout_quote');
+                        throw $exception->redirectTo(route('cart.index'));
+                    }
+                }
+
                 throw $exception;
             }
             $order = $duplicate;
