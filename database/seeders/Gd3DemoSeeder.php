@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Product;
 use App\Models\User;
 use App\Models\Voucher;
+use App\Support\ProductImages;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -45,16 +46,23 @@ class Gd3DemoSeeder extends Seeder
                 ]);
             }
             $category = Category::firstOrCreate(['slug' => 'gd3-sneakers'], ['name' => 'GD3 Sneakers']);
+            $demoFiles = ProductImages::demoFiles();
             for ($i = 1; $i <= 15; $i++) {
-                $image = 'products/gd3-demo-'.$i.'.svg';
-                if (! Storage::disk('public')->put($image, file_get_contents(public_path('images/demo-sneaker.svg')))) {
+                $sourceFile = $demoFiles[($i - 1) % count($demoFiles)];
+                $sourcePath = public_path('images/products/'.$sourceFile);
+                $contents = is_file($sourcePath) ? file_get_contents($sourcePath) : false;
+                $image = 'products/gd3-demo-'.$i.'.jpg';
+                if ($contents === false || ! Storage::disk('public')->put($image, $contents)) {
                     throw new RuntimeException('Không lưu được ảnh demo.');
                 }
-                Product::firstOrCreate(['slug' => 'gd3-sneaker-'.$i], [
+                $product = Product::firstOrCreate(['slug' => 'gd3-sneaker-'.$i], [
                     'category_id' => $category->id, 'name' => 'GD3 Sneaker '.$i,
                     'price' => 1200000 + $i * 10000, 'quantity' => $i === 12 ? 0 : 10,
                     'is_active' => $i !== 13, 'image' => $image,
                 ]);
+                if (str_ends_with((string) $product->image, '.svg')) {
+                    $product->update(['image' => $image]);
+                }
             }
 
             Voucher::firstOrCreate(['code' => 'DEMO10'], [

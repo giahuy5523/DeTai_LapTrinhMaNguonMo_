@@ -45,9 +45,10 @@
         @forelse ($products as $product)
             <div class="col-md-4 col-lg-3">
                 <div class="card h-100">
-                    @if ($product->image)
+                    @php($imageUrl = \App\Support\ProductImages::url($product->image))
+                    @if ($imageUrl)
                         <img
-                            src="{{ asset('storage/' . $product->image) }}"
+                            src="{{ $imageUrl }}"
                             class="card-img-top"
                             alt="{{ $product->name }}"
                             style="height: 200px; object-fit: contain;"

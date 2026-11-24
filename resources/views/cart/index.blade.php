@@ -42,9 +42,10 @@
                         <tr>
                             <td>
                                 <div class="d-flex align-items-center gap-3">
-                                    @if (!empty($item['image']))
+                                    @php($imageUrl = \App\Support\ProductImages::url($item['image'] ?? null))
+                                    @if ($imageUrl)
                                         <img
-                                            src="{{ asset('storage/' . $item['image']) }}"
+                                            src="{{ $imageUrl }}"
                                             alt="{{ $item['name'] }}"
                                             style="width:70px;height:70px;object-fit:cover"
                                             class="rounded"

@@ -50,8 +50,9 @@ document.addEventListener('DOMContentLoaded', function () {
     @forelse($newProducts as $product)
         <div class="col">
             <article class="card product-card h-100">
-                @if($product->image)
-                    <img src="{{ asset('storage/' . $product->image) }}" class="card-img-top product-image" alt="{{ $product->name }}" loading="lazy">
+                @php($imageUrl = \App\Support\ProductImages::url($product->image))
+                @if($imageUrl)
+                    <img src="{{ $imageUrl }}" class="card-img-top product-image" alt="{{ $product->name }}" loading="lazy">
                 @else
                     <div class="product-image d-flex align-items-center justify-content-center text-muted">Chưa có ảnh sản phẩm</div>
                 @endif

@@ -52,10 +52,11 @@
                         <input id="image" type="file" name="image" class="form-control @error('image') is-invalid @enderror" accept="image/*">
                         @error('image') <div class="invalid-feedback">{{ $message }}</div> @enderror
 
-                        @if($product->image)
+                        @php($imageUrl = \App\Support\ProductImages::url($product->image))
+                        @if($imageUrl)
                             <div class="mt-2">
                                 <span class="text-muted d-block mb-1">Ảnh hiện tại:</span>
-                                <img src="{{ asset('storage/' . $product->image) }}" width="120" class="img-thumbnail" alt="{{ $product->name }}">
+                                <img src="{{ $imageUrl }}" width="120" class="img-thumbnail" alt="{{ $product->name }}">
                             </div>
                         @endif
                     </div>
