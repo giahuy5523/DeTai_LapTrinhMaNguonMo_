@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Models\Product;
 use App\Models\User;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -11,7 +12,7 @@ final class StockReservationService
 {
     public function reserve(int $userId, string $token, array $cart): array
     {
-        return DB::transaction(function () use ($userId, $token, $cart) {
+        return $this->runTransaction(function () use ($userId, $token, $cart) {
             User::whereKey($userId)->lockForUpdate()->firstOrFail();
             $existing = DB::table('stock_reservations')->where('token', $token)->get();
             if ($existing->isNotEmpty()) {
@@ -42,7 +43,7 @@ final class StockReservationService
                 ]);
             }
             return ['token' => $token, 'expires_at' => $expires->toDateTimeString()];
-        }, 3);
+        });
     }
 
     public function validate(int $userId, string $token, array $cart): void
@@ -64,7 +65,7 @@ final class StockReservationService
     // The caller creates the order and decrements stock in this same transaction.
     public function consume(int $userId, string $token, array $cart, callable $createOrder): mixed
     {
-        return DB::transaction(function () use ($userId, $token, $cart, $createOrder) {
+        return $this->runTransaction(function () use ($userId, $token, $cart, $createOrder) {
             User::whereKey($userId)->lockForUpdate()->firstOrFail();
             Product::whereIn('id', array_keys($cart))->orderBy('id')->lockForUpdate()->get();
             $this->validate($userId, $token, $cart);
@@ -72,7 +73,7 @@ final class StockReservationService
             DB::table('stock_reservations')->where('user_id', $userId)->where('token', $token)
                 ->where('status', 'active')->update(['status' => 'consumed', 'updated_at' => now()]);
             return $result;
-        }, 3);
+        });
     }
 
     public function cancel(int $userId, string $token): void
@@ -88,6 +89,25 @@ final class StockReservationService
     {
         return DB::table('stock_reservations')->where('status', 'active')->where('expires_at', '<=', now())
             ->update(['status' => 'expired', 'updated_at' => now()]);
+    }
+
+    private function runTransaction(callable $callback): mixed
+    {
+        $attempts = 0;
+        while (true) {
+            try {
+                return DB::transaction($callback, 3);
+            } catch (QueryException $exception) {
+                $message = strtolower($exception->getMessage());
+                if (++$attempts < 5 && (str_contains($message, 'database is locked') || str_contains($message, 'database table is locked'))) {
+                    usleep(20000 * $attempts);
+
+                    continue;
+                }
+
+                throw $exception;
+            }
+        }
     }
 
     private function reject(string $message): never

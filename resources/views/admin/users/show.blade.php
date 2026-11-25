@@ -40,7 +40,14 @@
                         <span class="text-muted">Không có chi tiết sản phẩm</span>
                     @endforelse
                 </td>
-                <td class="text-nowrap">{{ \App\Support\Money::format($order->total_amount) }} đ</td>
+                <td class="text-nowrap">
+                    <div>{{ \App\Support\Money::format($order->total_amount) }} đ</div>
+                    @if ($order->voucher_code || \App\Support\Money::cents($order->discount_amount ?? '0.00') > 0)
+                        <div class="small text-success">
+                            Voucher <code>{{ $order->voucher_code ?? '—' }}</code> (−{{ \App\Support\Money::format($order->discount_amount) }} đ)
+                        </div>
+                    @endif
+                </td>
                 <td>{{ ['pending' => 'Chờ xử lý', 'processing' => 'Đang xử lý', 'completed' => 'Đã hoàn thành', 'cancelled' => 'Đã hủy'][$order->status] ?? $order->status }}</td>
             </tr>
         @empty

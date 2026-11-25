@@ -1,13 +1,11 @@
-# Voucher schema and checkout handoff for Trọng
+# Voucher schema and checkout handoff (Tuấn ↔ Trọng)
 
-This branch delivers the voucher schema and Admin CRUD/validation. Checkout
-application and the runtime voucher service belong to Trọng and are intentionally
-not implemented here. Use this contract as the handoff so the checkout flow has
-one source of discount calculation.
+> **Trạng thái phối hợp:** **ĐÃ CHỐT CONTRACT & HOÀN TẤT TÍCH HỢP** (25/11/2026).
+> Tuấn phụ trách schema, Admin CRUD/validation và diễn tập demo; Trọng triển khai `App\Support\VoucherService`, luồng áp dụng/gỡ voucher ở checkout, cập nhật QR theo số tiền sau giảm và kiểm thử giới hạn lượt dùng đồng thời.
 
-## Schema delivered in this branch
+## 1. Schema (`vouchers` & `orders`)
 
-`vouchers` contains:
+`vouchers` gồm các cột:
 
 | Column | Meaning |
 | --- | --- |
@@ -18,62 +16,51 @@ one source of discount calculation.
 | `minimum_order_amount` | Minimum pre-discount cart subtotal in VND |
 | `usage_limit` | Global successful-order limit; null means unlimited |
 | `used_count` | Number of successful orders consuming the voucher |
-| `starts_at`, `ends_at` | Inclusive validity timestamps |
+| `starts_at`, `ends_at` | Inclusive validity timestamps (`[starts_at, ends_at]`) |
 | `is_active` | Admin on/off status |
 
-Orders have `voucher_id`, `voucher_code`, `subtotal_amount`, and
-`discount_amount`; `total_amount` remains the payable amount. The voucher foreign
-key becomes null on deletion while the code and amount snapshots remain.
+Bảng `orders` lưu snapshot bất biến `voucher_id` (`ON DELETE SET NULL`), `voucher_code`, `subtotal_amount`, `discount_amount`, và `total_amount` (số tiền phải trả sau giảm). Khi Admin xóa voucher, `voucher_id` chuyển về `NULL` nhưng `voucher_code`, `subtotal_amount`, `discount_amount`, `total_amount` trên đơn cũ vẫn được giữ nguyên.
 
-## Proposed service contract for Trọng
+## 2. Finalized service contract (`App\Support\VoucherService`)
 
-Implement this in the checkout/service layer and use it for both preview and
-order creation; do not calculate a second discount in the controller or view:
+Cả bước xem trước (`POST /checkout/voucher`, `GET /checkout`) và bước tạo đơn (`POST /checkout`) đều dùng chung một nguồn tính duy nhất tại `App\Support\VoucherService` (không tính giảm giá lần hai ở controller hay view):
 
 ```php
-$quote = $voucherService->quote($code, $subtotalCents);
-// voucher_id, code, discount_amount, discount_cents,
-// payable_amount, payable_cents
+$quote = app(\App\Support\VoucherService::class)->quote($code, $subtotalCents);
+// Returns:
+// voucher_id, code, discount_type, discount_value, max_discount_amount,
+// subtotal_cents, subtotal_amount, discount_cents, discount_amount,
+// payable_cents, payable_amount
 
-$finalQuote = $voucherService->consume($code, $subtotalCents);
+$finalQuote = app(\App\Support\VoucherService::class)->consume($code, $subtotalCents);
 ```
 
-Amounts passed to the service are integer cents. `quote()` should check the
-normalized code, active status, time window, minimum subtotal, and remaining
-uses, then compute the percentage/fixed discount and cap without consuming a
-use. `consume()` should repeat those checks under a voucher row lock and
-increment `used_count` once.
+- Mọi số tiền truyền vào là số nguyên xu (`int $subtotalCents` qua `App\Support\Money::cents()`).
+- `quote()` chuẩn hóa mã chữ hoa (`VoucherService::normalizeCode()`), kiểm tra tồn tại, `is_active`, khung giờ bao gồm hai đầu mút `[starts_at, ends_at]`, giá trị đơn tối thiểu `minimum_order_amount`, và lượt còn lại (`usage_limit === null || used_count < usage_limit`) mà **không** tăng `used_count`.
+- Tính giảm giá phần trăm bằng phép chia nguyên chống tràn `intdiv($subtotalCents, 10000) * $rateBasisPoints + intdiv(($subtotalCents % 10000) * $rateBasisPoints, 10000)` (luôn làm tròn xuống đến xu), áp trần `max_discount_amount`, và kẹp không vượt `$subtotalCents`. Giảm cố định (`fixed`) được kẹp tối đa bằng `$subtotalCents`.
+- `consume()` chạy **bên trong cùng `DB::transaction`** với `StockReservationService::consume()`, khóa dòng voucher bằng `lockForUpdate()`, kiểm tra lại toàn bộ điều kiện rồi cập nhật nguyên tử `whereColumn('used_count', '<', 'usage_limit')->increment('used_count')`. Nếu tạo đơn hoặc trừ kho lỗi, toàn bộ transaction (bao gồm `used_count`) được rollback.
+- Lượt dùng chỉ tăng khi đơn tạo thành công; hủy đơn (Customer hoặc Admin) hoàn kho sản phẩm nhưng **không** hoàn lại `used_count`.
 
-Call `consume()` inside the same transaction that creates the order and
-decrements stock. A failed order write must roll the usage increment back too.
-Store the returned amounts in the order snapshot. Count a use when an order is
-successfully created; cancellation does not restore it. The percentage result
-must be rounded down to cents; fixed discounts must not exceed the subtotal.
+## 3. Finalized HTTP wiring
 
-## Suggested HTTP wiring
+Tất cả endpoint checkout nằm trong nhóm middleware `['auth', 'customer']`:
 
-- `POST /checkout/voucher`: validate/preview the code against the current
-  server-side cart and store only the normalized code plus cart snapshot in the
-  customer session.
-- `DELETE /checkout/voucher`: remove the current selection.
-- `POST /checkout`: rebuild subtotal from database product prices, revalidate
-  and consume inside the order/stock transaction, then save the order snapshot.
-- Protect all endpoints with the existing authenticated-customer middleware.
+- `POST /checkout/voucher` (`checkout.voucher.apply`): làm mới giỏ từ DB, gọi `VoucherService::quote()`, lưu `session('checkout_voucher') = ['code' => $normalizedCode, 'snapshot' => CartSnapshot::version($cart)]` và quay lại `/checkout` (giữ trạng thái chọn COD/QR).
+- `DELETE /checkout/voucher` (`checkout.voucher.remove`): xóa `session('checkout_voucher')`.
+- `GET /checkout` (`checkout.index`): nếu có `checkout_voucher` khớp snapshot giỏ hàng thì gọi `VoucherService::quote()` hiển thị Tạm tính / Giảm giá / Tổng thanh toán và nhúng số tiền sau giảm + mã voucher vào QR chuẩn ISO/IEC 18004; nếu voucher vừa bị Admin tắt/hết hạn/hết lượt thì tự gỡ và hiện cảnh báo.
+- `POST /checkout` (`checkout.store`): tính lại subtotal từ giá DB đã khóa, gọi `VoucherService::consume()` trong cùng transaction với `StockReservationService::consume()`, lưu snapshot đơn hàng rồi xóa `['cart', 'checkout_quote', 'checkout_voucher']`. Replay idempotent với cùng `checkout_token` không trừ thêm lượt voucher.
+- Mọi thao tác sửa giỏ hàng (`CartController@add`, `update`, `remove`, `CartSnapshot::refresh` chuẩn hóa) đều xóa `checkout_voucher` cũ để tránh lệch giá.
+- Admin CRUD nằm tại `/admin/vouchers` (middleware `['auth', 'admin']`), hiển thị `used_count / usage_limit` và trạng thái *Đang bật / Đã tắt / Chưa đến hạn / Hết hạn / Hết lượt*.
 
-These checkout endpoints are not present yet. Admin CRUD is available under
-`/admin/vouchers`, protected by the existing `auth` and `admin` middleware.
+## 4. Acceptance matrix (đã kiểm chứng)
 
-## Acceptance cases for checkout integration
+| # | Tiêu chí nghiệm thu | Bằng chứng kiểm thử | Kết quả |
+| --- | --- | --- | --- |
+| 1 | Chuẩn hóa chữ thường → chữ hoa; từ chối trùng mã khác hoa/thường ở Admin & unique index DB | `VoucherTest`, `CheckoutVoucherTest` | **PASS** |
+| 2 | Phần trăm làm tròn xuống theo xu và áp trần `max_discount_amount`; giảm cố định kẹp theo subtotal | `CheckoutVoucherTest::test_voucher_service_normalizes_case_rounds_percentage_down_and_caps_or_clamps_discounts` | **PASS** |
+| 3 | Từ chối voucher tắt, tương lai, hết hạn, dưới tối thiểu, hết lượt; biên `[starts_at, ends_at]` bao gồm 2 đầu mút | `CheckoutVoucherTest` (rejection + inclusive window tests) | **PASS** |
+| 4 | Xem trước không tăng lượt; đặt thành công tăng đúng 1; tạo đơn lỗi rollback lượt; hủy đơn không hoàn lượt; replay idempotent không trừ 2 lần | `CheckoutVoucherTest` | **PASS** |
+| 5 | Giới hạn 1 lượt: 2 tiến trình checkout đồng thời không thể cùng dùng lượt cuối | `CheckoutVoucherTest::test_concurrent_two_process_checkouts_cannot_both_consume_single_use_voucher` & `tests/manual/voucher-concurrency.php` (3/3 vòng `[accepted, rejected]`) | **PASS** |
+| 6 | Đơn cũ giữ nguyên `voucher_code`, `subtotal_amount`, `discount_amount`, `total_amount` sau khi xóa voucher | `CheckoutVoucherTest` & diễn tập demo bước 14 (`docs/DEMO_REHEARSAL_RESULT.md`) | **PASS** |
 
-1. Lowercase input normalizes to uppercase; duplicate codes differing only by
-   case are rejected by Admin validation and the database unique index.
-2. Percentage discount is rounded down to cents and capped; fixed discount is
-   clamped to subtotal.
-3. Inactive, future, expired, under-minimum, and exhausted vouchers are rejected.
-4. Preview does not increment usage; a successful order increments once; failed
-   order creation rolls the increment back.
-5. With a limit of one, concurrent checkouts cannot both consume the last use.
-6. Old orders retain voucher code and amount snapshots after deletion.
-
-Admin CRUD tests are in `tests/Feature/VoucherTest.php`. Trọng should add the
-service/checkout tests with the integration work.
+Xem thêm biên bản diễn tập máy demo tại [docs/DEMO_REHEARSAL_RESULT.md](DEMO_REHEARSAL_RESULT.md).

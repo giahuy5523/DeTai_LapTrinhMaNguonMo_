@@ -288,4 +288,104 @@ class CheckoutVoucherTest extends TestCase
             ->assertViewHas('discountAmount', '0.00')
             ->assertViewHas('total', '800000.00');
     }
+
+    public function test_voucher_validity_window_is_inclusive_at_exact_start_and_end_timestamps(): void
+    {
+        $service = new VoucherService;
+        $start = now()->startOfMinute();
+        $end = $start->copy()->addHours(2);
+
+        $this->createVoucher([
+            'code' => 'WINDOW10',
+            'discount_type' => 'fixed',
+            'discount_value' => '25000.00',
+            'max_discount_amount' => null,
+            'minimum_order_amount' => '100000.00',
+            'starts_at' => $start,
+            'ends_at' => $end,
+        ]);
+
+        $this->assertSame('25000.00', $service->quote('WINDOW10', Money::cents('100000.00'), $start)['discount_amount']);
+        $this->assertSame('25000.00', $service->quote('WINDOW10', Money::cents('100000.00'), $end)['discount_amount']);
+
+        foreach ([$start->copy()->subSecond(), $end->copy()->addSecond()] as $outside) {
+            try {
+                $service->quote('WINDOW10', Money::cents('100000.00'), $outside);
+                $this->fail('Voucher should reject timestamp outside [starts_at, ends_at].');
+            } catch (ValidationException $exception) {
+                $this->assertArrayHasKey('voucher_code', $exception->errors());
+            }
+        }
+    }
+
+    public function test_replaying_voucher_checkout_is_idempotent_and_increments_usage_once(): void
+    {
+        $customer = User::factory()->create(['role' => 'customer']);
+        $product = $this->createProduct(5, '1000000.00');
+        $voucher = $this->createVoucher([
+            'code' => 'REPLAY50K',
+            'discount_type' => 'fixed',
+            'discount_value' => '50000.00',
+            'max_discount_amount' => null,
+            'minimum_order_amount' => '0.00',
+            'usage_limit' => 2,
+        ]);
+
+        $this->actingAs($customer)->post(route('cart.add', $product->id), ['quantity' => 1]);
+        $this->post(route('checkout.voucher.apply'), ['voucher_code' => 'REPLAY50K'])->assertRedirect();
+        $fields = $this->checkoutFields($this->receiverPayload('bank_transfer'));
+        $staleSession = [
+            'cart' => session('cart'),
+            'checkout_quote' => session('checkout_quote'),
+            'checkout_voucher' => session('checkout_voucher'),
+        ];
+
+        $this->post(route('checkout.store'), $fields)->assertRedirect(route('checkout.success'));
+        $order = Order::firstOrFail();
+
+        // Replay after cart cleared
+        $this->post(route('checkout.store'), $fields)->assertRedirect(route('checkout.success'));
+        // Replay with stale session snapshot containing voucher
+        $this->withSession($staleSession)->post(route('checkout.store'), $fields)->assertRedirect(route('checkout.success'));
+
+        $this->assertDatabaseCount('orders', 1);
+        $this->assertSame(1, $voucher->fresh()->used_count);
+        $this->assertSame(4, $product->fresh()->quantity);
+        $this->assertSame('REPLAY50K', $order->fresh()->voucher_code);
+        $this->assertSame(5000000, Money::cents($order->fresh()->discount_amount));
+    }
+
+    public function test_concurrent_two_process_checkouts_cannot_both_consume_single_use_voucher(): void
+    {
+        $script = base_path('tests/manual/voucher-concurrency.php');
+        $this->assertFileExists($script);
+
+        $process = proc_open(
+            [PHP_BINARY, $script, '--sqlite'],
+            [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
+            $pipes,
+            base_path()
+        );
+        $this->assertIsResource($process);
+        fclose($pipes[0]);
+        $stdout = stream_get_contents($pipes[1]);
+        $stderr = stream_get_contents($pipes[2]);
+        fclose($pipes[1]);
+        fclose($pipes[2]);
+        $exitCode = proc_close($process);
+
+        $this->assertSame(0, $exitCode, "Concurrent voucher script failed: {$stderr}\n{$stdout}");
+        $report = json_decode($stdout, true, 512, JSON_THROW_ON_ERROR);
+        $this->assertSame('PASS', $report['result']);
+        $this->assertCount(3, $report['rounds']);
+        foreach ($report['rounds'] as $round) {
+            $this->assertSame(['accepted', 'rejected'], $round['race']);
+            $this->assertSame(1, $round['used_count']);
+            $this->assertSame(1, $round['orders_created']);
+            $this->assertSame('100000.00', $round['discount_amount']);
+            $this->assertSame('900000.00', $round['total_amount']);
+            $this->assertSame(9, $round['stock_after_checkout_sum']);
+            $this->assertSame(10, $round['stock_after_cancel_sum']);
+        }
+    }
 }
