@@ -75,4 +75,6 @@ footer { background: #12372a !important; }
 .hero-photo { height: 430px; object-fit: cover; }
 @media(max-width:575px) { .hero-photo { height: 280px; } }
 .qr-demo-panel { background: #f8fbf7; border-color: #c8d9cc !important; }
-.qr-demo-svg { display: block; margin-inline: auto; max-width: 100%; height: auto; border: 1px solid #d7e2d9; border-radius: .75rem; }
+.qr-demo-svg { display: block; margin-inline: auto; max-width: 100%; height: auto; border: 1px solid #d7e2d9; border-radius: .5rem; background: #ffffff; }
+.qr-demo-expired { opacity: .45; filter: grayscale(1); }
+.qr-payload-preview { white-space: pre-wrap; overflow-wrap: anywhere; }

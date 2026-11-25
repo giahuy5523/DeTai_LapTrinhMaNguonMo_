@@ -48,7 +48,7 @@ final class CartSnapshot
     {
         $normalized = self::normalize($cart);
         if ($normalized !== $cart) {
-            session()->forget('checkout_quote');
+            session()->forget(['checkout_quote', 'checkout_voucher']);
             session()->flash('warning', 'Giỏ hàng đã được chuẩn hóa: gộp sản phẩm trùng và loại mục không hợp lệ. Vui lòng kiểm tra lại số lượng.');
         }
         $cart = $normalized;

@@ -4,11 +4,7 @@ namespace App\Support;
 
 final class SimulatedQr
 {
-    private const GRID_SIZE = 25;
-
-    private const MODULE_PX = 8;
-
-    private const QUIET_ZONE_PX = 16;
+    private const QUIET_ZONE_MODULES = 4;
 
     public static function reference(?string $token, ?int $orderId = null): string
     {
@@ -19,134 +15,68 @@ final class SimulatedQr
         return $orderId !== null ? 'QR-ORD-'.$orderId : 'QR-DEMO';
     }
 
-    public static function payload(string $reference, string $amountDecimal): string
+    public static function payload(string $reference, string $amountDecimal, ?string $voucherCode = null): string
     {
-        return 'SNEAKERSHOP-SIMULATED-QR|REF:'.$reference.'|VND:'.$amountDecimal.'|DEMO-NO-REAL-ACCOUNT';
+        $lines = [
+            'SNEAKERSHOP DEMO PAYMENT',
+            'Ma tham chieu: '.$reference,
+            'So tien: '.Money::format($amountDecimal).' VND',
+        ];
+
+        if (is_string($voucherCode) && trim($voucherCode) !== '') {
+            $lines[] = 'Voucher: '.mb_strtoupper(trim($voucherCode));
+        }
+
+        $lines[] = 'Noi dung: Thanh toan mo phong - Khong dung TK ngan hang that';
+
+        return implode("\n", $lines);
     }
 
-    public static function svg(string $reference, string $amountDecimal): string
+    /**
+     * @return array<int, array<int, bool>>
+     */
+    public static function matrix(string $reference, string $amountDecimal, ?string $voucherCode = null): array
     {
-        $matrix = self::buildMatrix(self::payload($reference, $amountDecimal));
-        $viewBoxSize = self::QUIET_ZONE_PX * 2 + self::GRID_SIZE * self::MODULE_PX;
+        return QrCodeEncoder::encode(self::payload($reference, $amountDecimal, $voucherCode));
+    }
+
+    public static function svg(string $reference, string $amountDecimal, ?string $voucherCode = null): string
+    {
+        $matrix = self::matrix($reference, $amountDecimal, $voucherCode);
+        $moduleCount = count($matrix);
+        $quiet = self::QUIET_ZONE_MODULES;
+        $viewBoxSize = $moduleCount + $quiet * 2;
         $ariaLabel = htmlspecialchars(
-            'Mã QR mô phỏng tham chiếu '.$reference.' số tiền '.Money::format($amountDecimal).' đ',
+            'Mã QR thanh toán demo tham chiếu '.$reference.' số tiền '.Money::format($amountDecimal).' đ',
             ENT_QUOTES,
             'UTF-8'
         );
 
-        $rects = [];
-        for ($row = 0; $row < self::GRID_SIZE; $row++) {
-            for ($col = 0; $col < self::GRID_SIZE; $col++) {
+        $pathParts = [];
+        for ($row = 0; $row < $moduleCount; $row++) {
+            $col = 0;
+            while ($col < $moduleCount) {
                 if (! $matrix[$row][$col]) {
+                    $col++;
+
                     continue;
                 }
 
-                $x = self::QUIET_ZONE_PX + $col * self::MODULE_PX;
-                $y = self::QUIET_ZONE_PX + $row * self::MODULE_PX;
-                $rects[] = '<rect x="'.$x.'" y="'.$y.'" width="'.self::MODULE_PX.'" height="'.self::MODULE_PX.'" fill="#12372a"/>';
+                $runStart = $col;
+                while ($col < $moduleCount && $matrix[$row][$col]) {
+                    $col++;
+                }
+                $runLen = $col - $runStart;
+                $x = $quiet + $runStart;
+                $y = $quiet + $row;
+                $pathParts[] = "M{$x} {$y}h{$runLen}v1h-{$runLen}z";
             }
         }
 
         return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '.$viewBoxSize.' '.$viewBoxSize.'" '
-            .'width="200" height="200" class="qr-demo-svg" role="img" aria-label="'.$ariaLabel.'">'
-            .'<rect width="'.$viewBoxSize.'" height="'.$viewBoxSize.'" rx="12" fill="#ffffff"/>'
-            .implode('', $rects)
+            .'width="220" height="220" class="qr-demo-svg" shape-rendering="crispEdges" role="img" aria-label="'.$ariaLabel.'">'
+            .'<rect width="'.$viewBoxSize.'" height="'.$viewBoxSize.'" fill="#ffffff"/>'
+            .'<path d="'.implode('', $pathParts).'" fill="#000000"/>'
             .'</svg>';
-    }
-
-    /**
-     * Build a deterministic 25x25 QR-style matrix without external network calls.
-     *
-     * @return array<int, array<int, bool>>
-     */
-    private static function buildMatrix(string $payload): array
-    {
-        $matrix = array_fill(0, self::GRID_SIZE, array_fill(0, self::GRID_SIZE, null));
-
-        foreach ([[0, 0], [0, self::GRID_SIZE - 7], [self::GRID_SIZE - 7, 0]] as [$topRow, $leftCol]) {
-            self::placeFinderWithSeparator($matrix, $topRow, $leftCol);
-        }
-
-        self::placeAlignmentPattern($matrix, 16, 16);
-        self::placeTimingPatterns($matrix);
-
-        // Fill remaining modules deterministically from SHA-256 digests of the payload.
-        $bitIndex = 0;
-        $digestCache = [];
-        for ($row = 0; $row < self::GRID_SIZE; $row++) {
-            for ($col = 0; $col < self::GRID_SIZE; $col++) {
-                if ($matrix[$row][$col] !== null) {
-                    continue;
-                }
-
-                $chunk = intdiv($bitIndex, 256);
-                if (! isset($digestCache[$chunk])) {
-                    $digestCache[$chunk] = hash('sha256', $payload.'|'.$chunk, true);
-                }
-
-                $localBit = $bitIndex % 256;
-                $byte = ord($digestCache[$chunk][intdiv($localBit, 8)]);
-                $matrix[$row][$col] = (($byte >> (7 - ($localBit % 8))) & 1) === 1;
-                $bitIndex++;
-            }
-        }
-
-        /** @var array<int, array<int, bool>> $matrix */
-        return $matrix;
-    }
-
-    /**
-     * @param  array<int, array<int, bool|null>>  $matrix
-     */
-    private static function placeFinderWithSeparator(array &$matrix, int $topRow, int $leftCol): void
-    {
-        for ($dr = -1; $dr <= 7; $dr++) {
-            for ($dc = -1; $dc <= 7; $dc++) {
-                $r = $topRow + $dr;
-                $c = $leftCol + $dc;
-                if ($r < 0 || $r >= self::GRID_SIZE || $c < 0 || $c >= self::GRID_SIZE) {
-                    continue;
-                }
-
-                if ($dr === -1 || $dr === 7 || $dc === -1 || $dc === 7) {
-                    $matrix[$r][$c] = false;
-                } elseif ($dr === 0 || $dr === 6 || $dc === 0 || $dc === 6) {
-                    $matrix[$r][$c] = true;
-                } elseif ($dr >= 2 && $dr <= 4 && $dc >= 2 && $dc <= 4) {
-                    $matrix[$r][$c] = true;
-                } else {
-                    $matrix[$r][$c] = false;
-                }
-            }
-        }
-    }
-
-    /**
-     * @param  array<int, array<int, bool|null>>  $matrix
-     */
-    private static function placeAlignmentPattern(array &$matrix, int $topRow, int $leftCol): void
-    {
-        for ($dr = 0; $dr < 5; $dr++) {
-            for ($dc = 0; $dc < 5; $dc++) {
-                $isDark = $dr === 0 || $dr === 4 || $dc === 0 || $dc === 4 || ($dr === 2 && $dc === 2);
-                $matrix[$topRow + $dr][$leftCol + $dc] = $isDark;
-            }
-        }
-    }
-
-    /**
-     * @param  array<int, array<int, bool|null>>  $matrix
-     */
-    private static function placeTimingPatterns(array &$matrix): void
-    {
-        for ($i = 8; $i <= self::GRID_SIZE - 9; $i++) {
-            $isDark = ($i % 2) === 0;
-            if ($matrix[6][$i] === null) {
-                $matrix[6][$i] = $isDark;
-            }
-            if ($matrix[$i][6] === null) {
-                $matrix[$i][6] = $isDark;
-            }
-        }
     }
 }

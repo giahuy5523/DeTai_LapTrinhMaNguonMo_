@@ -211,6 +211,14 @@
                         {{ $order->address }}
                     </p>
 
+                    @if ($order->voucher_code || \App\Support\Money::cents($order->discount_amount ?? '0.00') > 0)
+                        <p class="mb-1 text-success small">
+                            <strong>Mã giảm giá:</strong>
+                            <code>{{ $order->voucher_code ?? 'Voucher' }}</code>
+                            (−{{ \App\Support\Money::format($order->discount_amount) }} đ từ {{ \App\Support\Money::format($order->subtotal_amount) }} đ)
+                        </p>
+                    @endif
+
                     <p class="mb-3">
                         <strong>Tổng tiền:</strong>
                         <span class="text-danger fw-bold">

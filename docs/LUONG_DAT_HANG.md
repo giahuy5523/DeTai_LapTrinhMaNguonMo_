@@ -22,9 +22,11 @@ Bảng lưu trữ thông tin đơn hàng của khách hàng sau khi đặt hàng
 | `phone` | `VARCHAR(20)` | NOT NULL | Số điện thoại liên hệ nhận hàng |
 | `address` | `TEXT` | NOT NULL | Địa chỉ giao hàng chi tiết |
 | `note` | `TEXT` | NULLABLE | Ghi chú đơn hàng của khách |
-| `total_amount` | `DECIMAL(15, 2)` | NOT NULL, DEFAULT `0` | Tổng giá trị đơn hàng cần thanh toán |
+| `total_amount` | `DECIMAL(15, 2)` | NOT NULL, DEFAULT `0` | Tổng giá trị đơn hàng cần thanh toán (sau khi trừ voucher) |
 | `subtotal_amount` | `DECIMAL(15, 2)` | NOT NULL, DEFAULT `0` | Tổng tiền hàng trước giảm giá |
-| `discount_amount` | `DECIMAL(15, 2)` | NOT NULL, DEFAULT `0` | Mức giảm giá snapshot |
+| `discount_amount` | `DECIMAL(15, 2)` | NOT NULL, DEFAULT `0` | Mức giảm giá snapshot từ `VoucherService` |
+| `voucher_id` | `BIGINT UNSIGNED` | NULLABLE, FK (`vouchers.id`), `ON DELETE SET NULL` | Khóa ngoại voucher đã áp dụng |
+| `voucher_code` | `VARCHAR(32)` | NULLABLE | Snapshot mã voucher đã áp dụng (giữ nguyên ngay cả khi xóa voucher) |
 | `status` | `VARCHAR(255)` | NOT NULL, DEFAULT `'pending'` | Trạng thái đơn: `pending`, `processing`, `completed`, `cancelled` |
 | `payment_method` | `VARCHAR(30)` | NOT NULL, DEFAULT `'cod'` | Phương thức thanh toán: `cod`, `bank_transfer` (QR mô phỏng) |
 | `checkout_token` | `VARCHAR(64)` | NULLABLE, UNIQUE | Token idempotency & khóa giữ hàng `stock_reservations.token` |
@@ -179,7 +181,12 @@ sequenceDiagram
   * Nếu `session('checkout_quote')` đã tồn tại và khớp với `CartSnapshot::version($cart)`, hệ thống kiểm tra `validate()` và gọi `reserve()` với chính token cũ để **tái sử dụng token và giữ nguyên thời hạn `expires_at` ban đầu trên server** khi khách tải lại trang.
   * Nếu chưa có hoặc giỏ hàng vừa thay đổi, hệ thống hủy lượt giữ cũ (nếu có), sinh token mới 64 ký tự hex và gọi `reserve()` giữ hàng 5 phút theo giờ máy chủ (`now()->addMinutes(5)`).
   * Nếu lượt giữ đã hết hạn khi tải lại trang, hệ thống hủy quote và chuyển hướng về `/gio-hang` để khách xác nhận lại khi còn hàng.
-* **Hiển thị QR mô phỏng (`App\Support\SimulatedQr`):** Tạo mã tham chiếu xác định (`QR-<12 ký tự đầu của token>`), chuỗi payload demo không dùng tài khoản thật và SVG nội tuyến ngoại tuyến; đồng bộ đếm ngược bằng mốc thời gian `serverNow` và `reservationExpiresAt` từ máy chủ. Khi chọn phương thức `bank_transfer`, nút xác nhận duy nhất hiển thị nhãn **"Xác nhận thanh toán mô phỏng"**.
+* **Hiển thị QR chuẩn quét được (`App\Support\QrCodeEncoder` + `App\Support\SimulatedQr`):** Sinh mã QR chuẩn **ISO/IEC 18004** (Byte mode, mức sửa lỗi M, Reed-Solomon ECC, vùng trống 4 module, SVG nội tuyến ngoại tuyến). Khi quét bằng camera điện thoại sẽ hiển thị rõ nội dung thanh toán demo gồm mã tham chiếu (`QR-...`), số tiền cần thanh toán (đã trừ voucher nếu có), mã voucher (nếu có) và thông báo *"Thanh toan mo phong - Khong dung TK ngan hang that"*.
+* **Áp dụng mã giảm giá (`App\Support\VoucherService`):**
+  * `POST /checkout/voucher`: chuẩn hóa mã sang chữ hoa, gọi `VoucherService::quote()` kiểm tra hiệu lực (active, khung giờ, giá trị đơn tối thiểu, lượt còn lại) và tính giảm giá mà **không trừ lượt**; lưu mã chuẩn hóa kèm snapshot giỏ hàng vào `session('checkout_voucher')`.
+  * `DELETE /checkout/voucher`: gỡ voucher khỏi phiên thanh toán.
+  * Khi đặt hàng (`POST /checkout`), hệ thống gọi `VoucherService::consume()` **trong cùng DB transaction** với `StockReservationService::consume()`, khóa dòng voucher (`lockForUpdate`) và tăng `used_count` nguyên tử; nếu tạo đơn lỗi sẽ rollback cả lượt voucher; hủy đơn không hoàn lại lượt voucher.
+* **Thông báo hết hạn 5 phút rõ ràng:** Khi bộ đếm ngược server chạm `0:00`, banner giữ hàng tự chuyển sang trạng thái cảnh báo đỏ (`alert-danger`), khung QR và tóm tắt đơn hiển thị rõ thông báo hết hạn 5 phút + hoàn kho, vô hiệu hóa nút xác nhận/áp mã và nổi bật nút **"Quay về giỏ hàng"**.
 
 ### Giai đoạn 4: Xác thực & Validation biểu mẫu thanh toán (`CheckoutController@store`)
 * **Endpoint:** `POST /checkout`

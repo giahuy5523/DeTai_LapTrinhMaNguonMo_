@@ -83,6 +83,17 @@
                     </p>
                 @endif
 
+                @if ($order->voucher_code || \App\Support\Money::cents($order->discount_amount ?? '0.00') > 0)
+                    <p class="mb-1">
+                        <strong>Tạm tính:</strong>
+                        {{ \App\Support\Money::format($order->subtotal_amount) }} đ
+                    </p>
+                    <p class="mb-2 text-success">
+                        <strong>Giảm giá @if($order->voucher_code)(<code>{{ $order->voucher_code }}</code>)@endif:</strong>
+                        −{{ \App\Support\Money::format($order->discount_amount) }} đ
+                    </p>
+                @endif
+
                 <p class="fs-5">
                     <strong>Tổng tiền:</strong>
                     <span class="text-danger fw-bold">

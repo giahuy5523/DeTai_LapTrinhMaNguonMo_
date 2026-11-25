@@ -26,6 +26,8 @@ Route::middleware(['auth', 'customer'])->group(function () {
     Route::delete('/gio-hang/xoa/{id}', [CartController::class, 'remove'])->name('cart.remove');
 
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
+    Route::post('/checkout/voucher', [CheckoutController::class, 'applyVoucher'])->name('checkout.voucher.apply');
+    Route::delete('/checkout/voucher', [CheckoutController::class, 'removeVoucher'])->name('checkout.voucher.remove');
     Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
     Route::get('/checkout/thanh-cong', [CheckoutController::class, 'success'])->name('checkout.success');
     Route::patch('/don-hang/{id}/huy', [CartController::class, 'cancelOrder'])

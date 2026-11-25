@@ -52,10 +52,11 @@ final class StockReservationService
             $this->reject('Lượt giữ hàng không còn khớp giỏ hàng.');
         }
         foreach ($rows as $row) {
-            if ((int) $row->user_id !== $userId || $row->status !== 'active'
-                || now()->greaterThanOrEqualTo($row->expires_at)
-                || (int) $row->quantity !== (int) ($cart[$row->product_id]['quantity'] ?? 0)) {
-                $this->reject('Lượt giữ hàng đã hết hạn hoặc thay đổi. Vui lòng thử lại.');
+            if ((int) $row->user_id !== $userId || (int) $row->quantity !== (int) ($cart[$row->product_id]['quantity'] ?? 0)) {
+                $this->reject('Lượt giữ hàng đã thay đổi. Vui lòng quay lại giỏ hàng và thử lại.');
+            }
+            if ($row->status !== 'active' || now()->greaterThanOrEqualTo($row->expires_at)) {
+                $this->reject('Phiên giữ hàng 5 phút đã hết hạn và tồn kho đã được hoàn lại. Vui lòng quay lại giỏ hàng để đặt lại nếu còn hàng.');
             }
         }
     }

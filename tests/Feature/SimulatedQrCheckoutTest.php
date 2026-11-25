@@ -306,4 +306,88 @@ class SimulatedQrCheckoutTest extends TestCase
         $this->patch(route('orders.cancel', $order->id))->assertStatus(422);
         $this->assertSame(3, $product->fresh()->quantity);
     }
+
+    public function test_checkout_page_renders_clear_five_minute_expiry_notice_and_back_to_cart_controls(): void
+    {
+        $user = $this->customer();
+        $product = $this->createProduct(2, '1200000.00');
+
+        $this->actingAs($user)->post(route('cart.add', $product->id), ['quantity' => 1]);
+
+        $response = $this->get(route('checkout.index', ['payment_method' => 'bank_transfer']))
+            ->assertOk();
+
+        $response->assertSee('id="reservationAlert"', false)
+            ->assertSee('id="reservationExpired"', false)
+            ->assertSee('Đã hết thời gian giữ hàng 5 phút!')
+            ->assertSee('id="expiredBackToCartBtn"', false)
+            ->assertSee('id="qrExpiredNotice"', false)
+            ->assertSee('id="summaryExpiredNotice"', false)
+            ->assertSee('Quay về giỏ hàng')
+            ->assertSee(route('cart.index'), false);
+    }
+
+    public function test_two_accounts_competing_for_last_unit_blocks_second_until_five_minute_expiry_releases_stock(): void
+    {
+        $customerA = $this->customer();
+        $customerB = $this->customer();
+        $product = $this->createProduct(1, '1500000.00');
+
+        // 1. Account A adds last unit and enters checkout (holds 5-minute reservation)
+        $this->actingAs($customerA)->post(route('cart.add', $product->id), ['quantity' => 1]);
+        $checkoutA = $this->get(route('checkout.index', ['payment_method' => 'bank_transfer']))->assertOk();
+        $tokenA = $checkoutA->viewData('checkoutVersion');
+        $cartSessionA = [
+            'cart' => session('cart'),
+            'checkout_quote' => session('checkout_quote'),
+        ];
+
+        $this->assertSame(1, $product->fresh()->quantity);
+        $this->assertDatabaseHas('stock_reservations', [
+            'user_id' => $customerA->id,
+            'token' => $tokenA,
+            'status' => 'active',
+        ]);
+
+        // 2. Account B adds the same last unit while A is still holding it -> checkout must reject B
+        $this->post('/logout');
+        $this->actingAs($customerB)->post(route('cart.add', $product->id), ['quantity' => 1]);
+        $this->get(route('checkout.index'))
+            ->assertRedirect(route('cart.index'))
+            ->assertSessionHasErrors('cart');
+        $this->assertSame(1, $product->fresh()->quantity);
+
+        // 3. 5 minutes pass -> run expire() and verify stock is released back to availability
+        $this->travel(5)->minutes();
+        $this->assertSame(1, (new StockReservationService)->expire());
+        $this->assertDatabaseHas('stock_reservations', [
+            'user_id' => $customerA->id,
+            'token' => $tokenA,
+            'status' => 'expired',
+        ]);
+
+        // 4. Account A tries to confirm expired hold -> rejected & redirected back to cart, 0 orders created
+        $this->post('/logout');
+        $this->actingAs($customerA)
+            ->withSession($cartSessionA)
+            ->post(route('checkout.store'), $this->receiverPayload('bank_transfer', [
+                'checkout_version' => $tokenA,
+            ]))
+            ->assertRedirect(route('cart.index'))
+            ->assertSessionHasErrors('cart');
+        $this->assertDatabaseCount('orders', 0);
+        $this->assertSame(1, $product->fresh()->quantity);
+
+        // 5. Account B now retries checkout -> succeeds and takes the last unit!
+        $this->post('/logout');
+        $this->actingAs($customerB)->post(route('cart.add', $product->id), ['quantity' => 1]);
+        $checkoutB = $this->get(route('checkout.index', ['payment_method' => 'bank_transfer']))->assertOk();
+        $this->post(route('checkout.store'), $this->receiverPayload('bank_transfer', [
+            'checkout_version' => $checkoutB->viewData('checkoutVersion'),
+        ]))->assertRedirect(route('checkout.success'));
+
+        $this->assertDatabaseCount('orders', 1);
+        $this->assertSame($customerB->id, Order::firstOrFail()->user_id);
+        $this->assertSame(0, $product->fresh()->quantity);
+    }
 }
