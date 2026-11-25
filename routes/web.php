@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Route;
 // --- TRANG CHỦ ---
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/san-pham', [StoreController::class, 'index'])->name('store.index');
+Route::get('/san-pham/{product:slug}', [StoreController::class, 'show'])->name('store.show');
 
 // --- ROUTES GIỎ HÀNG & CHECKOUT (Customer) ---
 Route::middleware(['auth', 'customer'])->group(function () {
