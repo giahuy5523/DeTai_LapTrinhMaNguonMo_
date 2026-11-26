@@ -186,7 +186,7 @@ sequenceDiagram
   * `POST /checkout/voucher`: chuẩn hóa mã sang chữ hoa, gọi `VoucherService::quote()` kiểm tra hiệu lực (active, khung giờ, giá trị đơn tối thiểu, lượt còn lại) và tính giảm giá mà **không trừ lượt**; lưu mã chuẩn hóa kèm snapshot giỏ hàng vào `session('checkout_voucher')`.
   * `DELETE /checkout/voucher`: gỡ voucher khỏi phiên thanh toán.
   * Khi đặt hàng (`POST /checkout`), hệ thống gọi `VoucherService::consume()` **trong cùng DB transaction** với `StockReservationService::consume()`, khóa dòng voucher (`lockForUpdate`) và tăng `used_count` nguyên tử; nếu tạo đơn lỗi sẽ rollback cả lượt voucher; hủy đơn không hoàn lại lượt voucher.
-* **Thông báo hết hạn 5 phút rõ ràng:** Khi bộ đếm ngược server chạm `0:00`, banner giữ hàng tự chuyển sang trạng thái cảnh báo đỏ (`alert-danger`), khung QR và tóm tắt đơn hiển thị rõ thông báo hết hạn 5 phút + hoàn kho, vô hiệu hóa nút xác nhận/áp mã và nổi bật nút **"Quay về giỏ hàng"**.
+* **Thông báo hết hạn 5 phút rõ ràng:** Khi bộ đếm ngược server chạm `0:00`, banner giữ hàng tự chuyển sang trạng thái cảnh báo đỏ (`alert-danger`), khung QR và tóm tắt đơn hiển thị rõ thông báo hết hạn 5 phút + giải phóng hàng giữ, vô hiệu hóa nút xác nhận/áp mã và nổi bật nút **"Quay về giỏ hàng"**.
 
 ### Giai đoạn 4: Xác thực & Validation biểu mẫu thanh toán (`CheckoutController@store`)
 * **Endpoint:** `POST /checkout`

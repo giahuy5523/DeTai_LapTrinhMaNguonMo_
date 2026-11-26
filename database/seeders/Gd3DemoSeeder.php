@@ -23,8 +23,8 @@ class Gd3DemoSeeder extends Seeder
             throw new RuntimeException('Chỉ được seed vào MySQL sneakershop_gd3_test với APP_ENV=testing.');
         }
         $password = getenv('GD3_DEMO_PASSWORD');
-        if (! $password || strlen($password) < 8) {
-            throw new RuntimeException('Đặt GD3_DEMO_PASSWORD tối thiểu 8 ký tự; không ghi mật khẩu vào Git.');
+        if (! $password || strlen($password) < 12) {
+            throw new RuntimeException('Đặt GD3_DEMO_PASSWORD tối thiểu 12 ký tự; không ghi mật khẩu vào Git.');
         }
         // Validate existing identities before creating anything; never promote a user.
         $accounts = [

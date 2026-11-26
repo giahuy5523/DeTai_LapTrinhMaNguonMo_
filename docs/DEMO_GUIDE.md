@@ -9,7 +9,7 @@ SQLite preview and any application database:
 - App URL: `http://127.0.0.1:8025`
 - Local-only accounts: `admin@demo.test`, `customer1@demo.test`,
   `customer2@demo.test`
-- Shared demo password and database root password are stored under
+- Shared demo password (minimum 12 characters for `GD3_DEMO_PASSWORD`) and database root password are stored under
   `storage/app/private/`; those files are ignored by Git.
 
 ## Start the demo

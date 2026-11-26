@@ -19,7 +19,7 @@
         <div id="reservationExpired" class="d-none flex-column flex-sm-row align-items-sm-center justify-content-between gap-3" hidden>
             <div>
                 <strong class="d-block">Đã hết thời gian giữ hàng 5 phút!</strong>
-                <span>Phiên giữ hàng đã hết hạn theo giờ máy chủ và tồn kho đã được hoàn lại. Vui lòng quay về giỏ hàng để kiểm tra tồn kho và tạo lượt thanh toán mới.</span>
+                <span>Phiên giữ hàng đã hết hạn theo giờ máy chủ và hệ thống đã giải phóng hàng giữ. Vui lòng quay về giỏ hàng để kiểm tra tồn kho và tạo lượt thanh toán mới.</span>
             </div>
             <a id="expiredBackToCartBtn" href="{{ route('cart.index') }}" class="btn btn-danger text-nowrap">
                 Quay về giỏ hàng
@@ -87,7 +87,7 @@
                 qrSvgWrapper.classList.add('qr-demo-expired');
             }
             if (qrState) {
-                qrState.textContent = 'Đã hết hạn giữ hàng — Tồn kho đã hoàn lại';
+                qrState.textContent = 'Đã hết hạn giữ hàng — Đã giải phóng hàng giữ';
                 qrState.className = 'badge bg-danger text-wrap text-start lh-sm';
             }
             if (qrExpiredNotice) {
@@ -367,7 +367,7 @@
                             </div>
                             <div id="qrExpiredNotice" class="alert alert-danger mt-3 mb-0" role="alert" hidden>
                                 <strong>Mã QR mô phỏng đã hết hạn giữ hàng (5 phút).</strong>
-                                <p class="mb-2 mt-1 small">Số lượng sản phẩm giữ tạm đã được hoàn lại kho. Vui lòng quay về giỏ hàng để đặt lại nếu còn hàng.</p>
+                                <p class="mb-2 mt-1 small">Hệ thống đã giải phóng hàng giữ cho các khách hàng khác. Vui lòng quay về giỏ hàng để đặt lại nếu còn hàng.</p>
                                 <a href="{{ route('cart.index') }}" class="btn btn-danger btn-sm">Quay về giỏ hàng</a>
                             </div>
                         </div>
@@ -425,7 +425,7 @@
                         </div>
 
                         <div id="summaryExpiredNotice" class="alert alert-danger small mt-3 mb-0" role="alert" hidden>
-                            <strong>Hết thời gian giữ hàng 5 phút.</strong> Tồn kho đã được hoàn lại, vui lòng bấm <strong>Quay về giỏ hàng</strong> bên dưới để thử lại.
+                            <strong>Hết thời gian giữ hàng 5 phút.</strong> Hệ thống đã giải phóng hàng giữ, vui lòng bấm <strong>Quay về giỏ hàng</strong> bên dưới để thử lại.
                         </div>
 
                         <button

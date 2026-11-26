@@ -57,7 +57,7 @@ final class StockReservationService
                 $this->reject('Lượt giữ hàng đã thay đổi. Vui lòng quay lại giỏ hàng và thử lại.');
             }
             if ($row->status !== 'active' || now()->greaterThanOrEqualTo($row->expires_at)) {
-                $this->reject('Phiên giữ hàng 5 phút đã hết hạn và tồn kho đã được hoàn lại. Vui lòng quay lại giỏ hàng để đặt lại nếu còn hàng.');
+                $this->reject('Phiên giữ hàng 5 phút đã hết hạn và hệ thống đã giải phóng hàng giữ. Vui lòng quay về giỏ hàng để kiểm tra tồn kho và đặt lại nếu còn hàng.');
             }
         }
     }
