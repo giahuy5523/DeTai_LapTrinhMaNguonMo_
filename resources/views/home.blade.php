@@ -1,23 +1,47 @@
 @extends('layouts.app')
 @section('title', 'Trang chủ - SneakerShop')
 @section('content')
-<section class="shop-hero p-4 p-lg-5 mb-5">
-    <div class="row align-items-center g-4">
-        <div class="col-lg-8">
-            <span class="badge text-bg-light mb-3">SNEAKERS · THỂ THAO · PHONG CÁCH</span>
+<section class="shop-hero mb-5 overflow-hidden">
+    <div class="row g-0 align-items-stretch">
+        <div class="col-lg-5 p-4 p-lg-5 d-flex flex-column justify-content-center">
             <h1 class="display-4 fw-bold mb-3">Bước đi mới.<br>Phong cách của bạn.</h1>
-            <p class="lead mb-4">Khám phá bộ sưu tập giày thể thao tại SneakerShop và chọn đôi giày cho mỗi ngày năng động.</p>
-            <a class="btn btn-light btn-lg" href="{{ route('store.index') }}">Khám phá sản phẩm →</a>
+            <p class="lead">Khám phá giày thể thao cho mỗi ngày năng động.</p>
+            <a class="btn btn-light btn-lg align-self-start" href="{{ route('store.index') }}">Khám phá sản phẩm →</a>
         </div>
-        <div class="col-lg-4">
-            <div class="hero-note p-4">
-                <span class="display-3 fw-bold">01</span>
-                <p class="h4 mt-3">Sẵn sàng cho<br>hành trình mới</p>
-                <p class="mb-0 small">Xem sản phẩm · Thêm vào giỏ · Đặt hàng</p>
+        <div class="col-lg-7">
+            <div id="shoeCarousel" class="carousel slide" aria-label="Bộ sưu tập giày">
+                <div class="carousel-indicators">
+                    <button type="button" data-bs-target="#shoeCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Ảnh giày 1"></button>
+                    <button type="button" data-bs-target="#shoeCarousel" data-bs-slide-to="1" aria-label="Ảnh giày 2"></button>
+                </div>
+                <div class="carousel-inner">
+                    <div class="carousel-item active"><img src="{{ asset('images/hero/red-sneaker.jpg') }}" class="d-block w-100 hero-photo" alt="Giày thể thao đỏ trên nền đỏ" fetchpriority="high"></div>
+                    <div class="carousel-item"><img src="{{ asset('images/hero/everyday-sneaker.jpg') }}" class="d-block w-100 hero-photo" alt="Giày thể thao phong cách hằng ngày" loading="lazy"></div>
+                </div>
+                <button class="carousel-control-prev" type="button" data-bs-target="#shoeCarousel" data-bs-slide="prev"><span class="carousel-control-prev-icon" aria-hidden="true"></span><span class="visually-hidden">Ảnh trước</span></button>
+                <button class="carousel-control-next" type="button" data-bs-target="#shoeCarousel" data-bs-slide="next"><span class="carousel-control-next-icon" aria-hidden="true"></span><span class="visually-hidden">Ảnh tiếp theo</span></button>
             </div>
+            <div class="text-end p-2"><button id="heroPlayback" class="btn btn-outline-light btn-sm" type="button" aria-pressed="false">Tạm dừng chuyển ảnh</button></div>
         </div>
     </div>
 </section>
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const carousel = new bootstrap.Carousel(document.getElementById('shoeCarousel'), { interval: 6000, ride: false, pause: 'hover' });
+    const button = document.getElementById('heroPlayback');
+    let paused = reduced;
+    function updatePlayback() {
+        if (paused) carousel.pause(); else carousel.cycle();
+        button.textContent = paused ? 'Tiếp tục chuyển ảnh' : 'Tạm dừng chuyển ảnh';
+        button.setAttribute('aria-pressed', String(paused));
+    }
+    button.addEventListener('click', function () { paused = !paused; updatePlayback(); });
+    updatePlayback();
+});
+</script>
+@endpush
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
     <div><p class="text-uppercase text-muted small mb-1">Bộ sưu tập</p><h2 class="fw-bold mb-0">Sản phẩm mới nhất</h2></div>
     <a class="btn btn-outline-dark" href="{{ route('store.index') }}">Xem tất cả</a>

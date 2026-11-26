@@ -109,7 +109,7 @@ function race(string $operation, array $users, int $targetId): array
 }
 
 $category = Category::firstOrCreate(['slug' => 'gd3-concurrency'], ['name' => 'GD3 concurrency']);
-$users = User::whereIn('email', ['customer@gd3.example.test', 'customer2@gd3.example.test'])->get();
+$users = User::whereIn('email', ['customer1@demo.test', 'customer2@demo.test'])->get();
 if ($users->count() !== 2) {
     throw new RuntimeException('Set up the two GD3 customer accounts first.');
 }

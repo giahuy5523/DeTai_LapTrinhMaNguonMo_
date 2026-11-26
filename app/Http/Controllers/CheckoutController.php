@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Support\CartSnapshot;
 use App\Support\Money;
+use App\Support\StockReservationService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -29,10 +30,34 @@ class CheckoutController extends Controller
         } catch (ValidationException $exception) {
             return redirect()->route('cart.index')->withErrors(['cart' => 'Giá trị giỏ hàng vượt giới hạn. Vui lòng giảm số lượng.']);
         }
-        $checkoutVersion = bin2hex(random_bytes(32));
-        session()->put('checkout_quote', ['version' => $checkoutVersion, 'snapshot' => CartSnapshot::version($cart)]);
+        $service = app(StockReservationService::class);
+        $quote = session('checkout_quote');
+        $snapshot = CartSnapshot::version($cart);
+        if ($quote && hash_equals($quote['snapshot'], $snapshot)) {
+            try {
+                $service->validate(auth()->id(), $quote['version'], $cart);
+                $checkoutVersion = $quote['version'];
+                $reservation = $service->reserve(auth()->id(), $checkoutVersion, $cart);
+            } catch (ValidationException $exception) {
+                $service->cancel(auth()->id(), $quote['version']);
+                session()->forget('checkout_quote');
+                return redirect()->route('cart.index')->withErrors($exception->errors());
+            }
+        } else {
+            if ($quote) {
+                $service->cancel(auth()->id(), $quote['version']);
+            }
+            $checkoutVersion = bin2hex(random_bytes(32));
+            try {
+                $reservation = $service->reserve(auth()->id(), $checkoutVersion, $cart);
+            } catch (ValidationException $exception) {
+                return redirect()->route('cart.index')->withErrors($exception->errors());
+            }
+            session()->put('checkout_quote', ['version' => $checkoutVersion, 'snapshot' => $snapshot]);
+        }
+        $reservationExpiresAt = \Illuminate\Support\Carbon::parse($reservation['expires_at'])->toIso8601String();
 
-        return view('checkout.index', compact('cart', 'total', 'checkoutVersion'));
+        return view('checkout.index', compact('cart', 'total', 'checkoutVersion', 'reservationExpiresAt'));
     }
 
     // Xử lý đặt hàng
@@ -73,7 +98,7 @@ class CheckoutController extends Controller
 
         try {
             $order = Order::where('checkout_token', $validated['checkout_version'])->where('user_id', auth()->id())->first()
-                ?? DB::transaction(function () use ($validated, $cart) {
+                ?? app(StockReservationService::class)->consume(auth()->id(), $validated['checkout_version'], $cart, function () use ($validated, $cart) {
                     $orderItems = [];
                     $seenProducts = [];
                     $total = 0;
@@ -160,7 +185,7 @@ class CheckoutController extends Controller
                     }
 
                     return $order;
-                }, 3);
+                });
         } catch (QueryException|ValidationException $exception) {
             if ($exception instanceof QueryException && ! str_contains($exception->getMessage(), 'checkout_token')) {
                 throw $exception;

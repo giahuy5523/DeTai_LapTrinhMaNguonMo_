@@ -156,6 +156,11 @@ class ProductController extends Controller
                 if (! hash_equals($locked->editVersion(), $request->input('_version'))) {
                     throw ValidationException::withMessages(['_version' => 'Sản phẩm hoặc tồn kho đã thay đổi. Vui lòng tải lại trang sửa trước khi lưu.']);
                 }
+                $held = DB::table('stock_reservations')->where('product_id', $locked->id)
+                    ->where('status', 'active')->where('expires_at', '>', now())->lockForUpdate()->get()->sum('quantity');
+                if ((int) $request->quantity < $held) {
+                    throw ValidationException::withMessages(['quantity' => 'Tồn kho không thể thấp hơn số lượng đang giữ cho khách.']);
+                }
                 $returnable = OrderItem::where('product_id', $locked->id)
                     ->whereHas('order', fn ($query) => $query->whereIn('status', ['pending', 'processing']))->sum('quantity');
                 if ((int) $request->quantity > 2147483647 - (int) $returnable) {

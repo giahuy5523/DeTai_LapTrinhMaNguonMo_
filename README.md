@@ -55,7 +55,7 @@ Tạo schema `sneakershop_gd3_test` (utf8mb4) rồi dùng một terminal riêng:
 $env:APP_ENV = 'testing'
 $env:DB_DATABASE = 'sneakershop_gd3_test'
 $env:SESSION_COOKIE = 'sneakershop_gd3_demo_session'
-# Đặt GD3_DEMO_PASSWORD riêng, tối thiểu 12 ký tự, ngoài Git.
+# Đặt GD3_DEMO_PASSWORD riêng, tối thiểu 8 ký tự, ngoài Git.
 .\scripts\php.ps1 artisan migrate
 .\scripts\php.ps1 artisan db:seed --class=Gd3DemoSeeder
 $env:APP_ENV = 'local'
@@ -70,7 +70,7 @@ Set-Location public
 & ..\storage\app\php83\php.exe -S 127.0.0.1:8023 ..\vendor\laravel\framework\src\Illuminate\Foundation\resources\server.php
 ```
 
-Tài khoản demo: `admin@gd3.example.test`, `customer@gd3.example.test`, `customer2@gd3.example.test`.
+Tài khoản demo: `admin@demo.test`, `customer1@demo.test`, `customer2@demo.test`.
 Seed lại giữ nguyên tài khoản, role, mật khẩu và sản phẩm hiện có; không reset tồn kho.
 Đặt và lưu mật khẩu demo cục bộ. Xem [hướng dẫn chạy demo trên Windows](docs/DEMO_GUIDE.md).
 Dữ liệu demo có sản phẩm còn hàng, hết hàng, ngừng bán và ảnh minh họa tự tạo.
