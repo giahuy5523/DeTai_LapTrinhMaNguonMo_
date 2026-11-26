@@ -55,7 +55,7 @@ Tạo schema `sneakershop_gd3_test` (utf8mb4) rồi dùng một terminal riêng:
 $env:APP_ENV = 'testing'
 $env:DB_DATABASE = 'sneakershop_gd3_test'
 $env:SESSION_COOKIE = 'sneakershop_gd3_demo_session'
-# Đặt GD3_DEMO_PASSWORD riêng, tối thiểu 8 ký tự, ngoài Git.
+# Đặt GD3_DEMO_PASSWORD riêng, tối thiểu 12 ký tự, ngoài Git.
 .\scripts\php.ps1 artisan migrate
 .\scripts\php.ps1 artisan db:seed --class=Gd3DemoSeeder
 $env:APP_ENV = 'local'

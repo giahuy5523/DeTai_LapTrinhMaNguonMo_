@@ -49,7 +49,14 @@
                         <tr>
                             <td class="fw-bold">#{{ $order->id }}</td>
                             <td>{{ $order->customer_name ?? 'Khách vãng lai' }}</td>
-                            <td class="text-danger fw-bold">{{ \App\Support\Money::format($order->total_amount) }} VNĐ</td>
+                            <td>
+                                <div class="text-danger fw-bold">{{ \App\Support\Money::format($order->total_amount) }} VNĐ</div>
+                                @if ($order->voucher_code || \App\Support\Money::cents($order->discount_amount ?? '0.00') > 0)
+                                    <div class="small text-success">
+                                        Voucher <code>{{ $order->voucher_code ?? '—' }}</code> (−{{ \App\Support\Money::format($order->discount_amount) }} đ)
+                                    </div>
+                                @endif
+                            </td>
                             <td>
                                 @switch($order->status)
                                     @case('pending')

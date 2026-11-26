@@ -62,7 +62,7 @@ Các ca quyền riêng tư đơn, sản phẩm bị xóa, rollback nhiều sản
    $env:APP_ENV = 'testing'
    $env:DB_CONNECTION = 'mysql'
    $env:DB_DATABASE = 'sneakershop_gd3_test'
-   # Đặt GD3_DEMO_PASSWORD riêng, tối thiểu 8 ký tự, ngoài Git.
+   # Đặt GD3_DEMO_PASSWORD riêng, tối thiểu 12 ký tự, ngoài Git.
    php artisan migrate
    php artisan db:seed --class=Gd3DemoSeeder
    php artisan storage:link

@@ -41,7 +41,7 @@
                 </p>
 
                 <p>
-                    <strong>Trạng thái:</strong>
+                    <strong>Trạng thái đơn hàng:</strong>
                     @php
                         $statusLabels = [
                             'pending' => ['Chờ xử lý', 'bg-warning text-dark'],
@@ -57,11 +57,42 @@
                 <p>
                     <strong>Phương thức thanh toán:</strong>
                     @if ($order->payment_method === 'bank_transfer')
-                        Chuyển khoản ngân hàng
+                        Chuyển khoản QR (mô phỏng)
                     @else
                         Thanh toán khi nhận hàng (COD)
                     @endif
                 </p>
+
+                @if ($order->payment_method === 'bank_transfer')
+                    <p>
+                        <strong>Mã tham chiếu mô phỏng:</strong>
+                        <code>{{ \App\Support\SimulatedQr::reference($order->checkout_token, $order->id) }}</code>
+                    </p>
+                    <p>
+                        <strong>Trạng thái thanh toán mô phỏng:</strong>
+                        @if ($order->status === 'cancelled')
+                            <span class="badge bg-secondary text-wrap text-start lh-sm">Đơn đã hủy — Giao dịch mô phỏng (không thu tiền thật)</span>
+                        @else
+                            <span class="badge bg-info text-dark text-wrap text-start lh-sm">Đã ghi nhận xác nhận mô phỏng — Chưa thu tiền thật</span>
+                        @endif
+                    </p>
+                @else
+                    <p>
+                        <strong>Trạng thái thanh toán:</strong>
+                        Thanh toán khi nhận hàng
+                    </p>
+                @endif
+
+                @if ($order->voucher_code || \App\Support\Money::cents($order->discount_amount ?? '0.00') > 0)
+                    <p class="mb-1">
+                        <strong>Tạm tính:</strong>
+                        {{ \App\Support\Money::format($order->subtotal_amount) }} đ
+                    </p>
+                    <p class="mb-2 text-success">
+                        <strong>Giảm giá @if($order->voucher_code)(<code>{{ $order->voucher_code }}</code>)@endif:</strong>
+                        −{{ \App\Support\Money::format($order->discount_amount) }} đ
+                    </p>
+                @endif
 
                 <p class="fs-5">
                     <strong>Tổng tiền:</strong>
@@ -73,11 +104,11 @@
 
             @if ($order->payment_method === 'bank_transfer' && !in_array($order->status, ['cancelled', 'completed'], true))
                 <div class="alert alert-info text-start mt-4">
-                    <strong>Hướng dẫn chuyển khoản</strong>
+                    <strong>Thông tin thanh toán QR mô phỏng</strong>
                     <p class="mb-0 mt-2">
-                        Vui lòng liên hệ cửa hàng để nhận thông tin tài khoản
-                        và nội dung chuyển khoản chính xác. Đơn hàng chưa được
-                        xác nhận thanh toán tự động.
+                        Thao tác xác nhận QR chỉ mang tính mô phỏng phục vụ đồ án,
+                        không sử dụng tài khoản ngân hàng thật và chưa thu tiền thật.
+                        Đơn hàng vẫn đang ở trạng thái <strong>Chờ xử lý</strong> để quản trị viên kiểm tra.
                     </p>
                 </div>
             @endif
