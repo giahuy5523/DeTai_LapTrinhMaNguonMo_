@@ -16,9 +16,9 @@
 | Framework & Test Runner | Laravel `12.71.0`, PHPUnit `11.5.57`, Composer `2` |
 | Trình duyệt kiểm chứng | Google Chrome headless (`--headless=new`), giải mã QR độc lập bằng `jsQR 1.4.0` |
 | Server HTTP diễn tập | `php artisan serve --host=127.0.0.1 --port=8025 --no-reload` (`APP_ENV=local`, bật đầy đủ CSRF & cookie session tách biệt) |
-| Cơ sở dữ liệu diễn tập trên máy này | SQLite `3.54.1` chế độ `WAL` (`busy_timeout=5000`) cô lập riêng cho buổi diễn tập |
+| Cơ sở dữ liệu diễn tập HTTP & kiểm thử đồng thời | SQLite `3.54.1` WAL cô lập (17 bước HTTP end-to-end) **và MariaDB `10.11.20-MariaDB`** cô lập trên `127.0.0.1:33430`, schema `sneakershop_gd3_test` (8 kịch bản đồng thời, hết hạn, hoàn kho & kiểm toán SQL) |
 
-> **Ghi chú trung thực về phạm vi DB:** Máy thực hiện vòng diễn tập này không cài sẵn XAMPP/MariaDB nên toàn bộ 17 bước diễn tập HTTP, quét QR và 3 vòng đua 2 tiến trình giới hạn lượt voucher chạy trên **SQLite WAL cô lập**. Các script `tests/manual/voucher-concurrency.php` (chế độ mặc định không cờ `--sqlite`) và `tests/manual/data-integrity-audit.php` đã sẵn sàng guard cho schema `sneakershop_gd3_test` để chạy bổ sung trực tiếp trên máy demo cài MariaDB 10.4.32 trước buổi thuyết trình.
+> **Ghi chú:** Toàn bộ kịch bản đồng thời, giữ hàng 5 phút, voucher 1 lượt, hủy đơn hoàn kho và kiểm toán dữ liệu đã được kiểm chứng trực tiếp trên **MariaDB `10.11.20-MariaDB` InnoDB** cô lập (cổng `33430`, schema `sneakershop_gd3_test`), không đụng cơ sở dữ liệu ứng dụng.
 
 ---
 
@@ -71,12 +71,38 @@
 
 ---
 
-## 5. Lệnh chạy lại trên máy demo có MariaDB (`sneakershop_gd3_test`)
+## 5. Kết quả kiểm chứng trực tiếp trên MariaDB `10.11.20-MariaDB` (26/11/2026)
 
-Khi mở máy trình bày có MariaDB cổng `33430` theo `docs/DEMO_GUIDE.md`, chạy bổ sung 3 lệnh xác minh MariaDB sau:
+Thực thi trên instance MariaDB cô lập `127.0.0.1:33430`, schema `sneakershop_gd3_test` (`utf8mb4_unicode_ci`):
+
+| # | Script / Kịch bản MariaDB | Kết quả quan sát trên `10.11.20-MariaDB` | Trạng thái |
+| --- | --- | --- | --- |
+| 1 | `artisan migrate --force` & `Gd3DemoSeeder` | 15/15 migration chạy sạch; seed 3 tài khoản demo, 15 sản phẩm và 2 voucher `DEMO10`, `DEMO50K` | **PASS** |
+| 2 | `tests/manual/reservation-concurrency.php` | 2 khách tranh đôi cuối (`quantity = 1`): `race: ["accepted", "rejected"]`, `stock_unchanged: true`, `expired_hold_ignored: true` | **PASS** |
+| 3 | `tests/manual/gd3-concurrency.php` | 3/3 vòng: đặt đôi cuối `["accepted", "rejected"]`, hủy đồng thời 2 tiến trình `["accepted", "rejected"]`, tồn kho hoàn đúng về `1` | **PASS** |
+| 4 | `tests/manual/voucher-concurrency.php` | 3/3 vòng 2 tiến trình tranh voucher `usage_limit = 1` trên 2 sản phẩm tách biệt: `["accepted", "rejected"]`, `used_count = 1`, `orders_created = 1`, `discount = 100.000 đ`, `total = 900.000 đ`, hủy đơn hoàn kho `9 → 10` nhưng `used_count` giữ nguyên `1` | **PASS** |
+| 5 | `tests/manual/deep-lock-audit.php` | Khóa sản phẩm đảo thứ tự không deadlock (`accepted/accepted`); Admin & Customer cùng hủy 1 đơn chỉ hoàn kho đúng 1 lần (`[4, 4]`); replay trùng token tạo duy nhất 1 đơn | **PASS** |
+| 6 | `tests/manual/last-unit-replay.php` | Replay trùng `checkout_token` trên đôi cuối trả cùng `order_id`, chỉ tạo 1 đơn (`stock: 1 → 0 → 1`) | **PASS** |
+| 7 | Kịch bản tổng hợp 5 phút → hết hạn → `DEMO10` → hủy đơn | C2 bị chặn khi C1 giữ đôi cuối; hết 5 phút `expire()` đánh dấu `1` lượt, C1 gửi trễ bị từ chối; C2 đặt thành công với `DEMO10` (`2.460.000 − 150.000 = 2.310.000 đ`, `stock: 1 → 0`, `used_count: 0 → 1`); hủy đơn hoàn kho `0 → 1` và `used_count` giữ nguyên `1` | **PASS** |
+| 8 | `tests/manual/data-integrity-audit.php` | **0 vi phạm** trên cả 9 chỉ số SQL (`negative_stock`, `invalid_item_quantity`, `wrong_item_subtotal`, `wrong_order_subtotal`, `wrong_order_total`, `voucher_usage_overflow`, `duplicate_product_lines`, `invalid_order_state`, `orphan_order_items`) | **PASS** |
+
+## 6. Quy tắc thống nhất khi hủy đơn (trả lời hội đồng)
+
+- **Tồn kho sản phẩm (`products.quantity`):** **CÓ hoàn kho** đúng 1 lần qua `OrderStock::restore($order)` trong transaction hủy đơn (cả Customer hủy đơn `pending` lẫn Admin hủy đơn `pending`/`processing`).
+- **Lượt sử dụng voucher (`vouchers.used_count`):** **KHÔNG hoàn lại lượt sử dụng** khi hủy đơn đã tạo.
+  - Xem trước voucher (`POST /checkout/voucher`): **không trừ lượt**.
+  - Lỗi tạo đơn giữa transaction hoặc hết hạn giữ hàng 5 phút trước khi tạo đơn: **rollback toàn bộ, không trừ lượt**.
+  - Đơn đã tạo thành công rồi mới hủy: **chỉ hoàn tồn kho, không hoàn lượt voucher** (nhất quán với `docs/VOUCHER_HANDOFF.md`, `docs/DEMO_GUIDE.md`, chống lạm dụng giữ/hủy mã liên tục và giữ nguyên ràng buộc `usage_limit >= used_count` trên Admin CRUD).
+
+## 7. Lệnh chạy lại trên máy demo có MariaDB (`sneakershop_gd3_test`)
+
+Khi mở máy trình bày có MariaDB cổng `33430` theo `docs/DEMO_GUIDE.md`, chạy bộ xác minh MariaDB sau:
 
 ```powershell
-.\scripts\php.ps1 tests/manual/voucher-concurrency.php
 .\scripts\php.ps1 tests/manual/reservation-concurrency.php
+.\scripts\php.ps1 tests/manual/gd3-concurrency.php
+.\scripts\php.ps1 tests/manual/voucher-concurrency.php
+.\scripts\php.ps1 tests/manual/deep-lock-audit.php
+.\scripts\php.ps1 tests/manual/last-unit-replay.php
 .\scripts\php.ps1 tests/manual/data-integrity-audit.php
 ```

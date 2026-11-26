@@ -34,11 +34,9 @@ function replayWait(callable $condition): void
 if (($argv[1] ?? '') === 'worker') {
     [, , $userId, $productId, $token, $barrier] = $argv;
     auth()->setUser(User::findOrFail($userId));
-    session()->put('cart', [$productId => ['quantity' => 1]]);
-    (new CheckoutController)->index();
-    $quote = session('checkout_quote');
-    $quote['version'] = $token;
-    session()->put('checkout_quote', $quote);
+    $cart = \App\Support\CartSnapshot::refresh([$productId => ['quantity' => 1]]);
+    session()->put('cart', $cart);
+    session()->put('checkout_quote', ['version' => $token, 'snapshot' => \App\Support\CartSnapshot::version($cart)]);
     $synchronized = false;
     DB::listen(function ($query) use (&$synchronized, $barrier) {
         if (! $synchronized && DB::transactionLevel() === 0
@@ -65,6 +63,8 @@ $category = Category::where('slug', 'gd3-sneakers')->firstOrFail();
 $product = Product::create(['category_id' => $category->id, 'name' => 'Replay last unit '.uniqid(),
     'slug' => 'replay-last-'.uniqid(), 'price' => '10.25', 'quantity' => 1, 'is_active' => true]);
 $token = bin2hex(random_bytes(32));
+$replayCart = \App\Support\CartSnapshot::refresh([$product->id => ['quantity' => 1]]);
+(new \App\Support\StockReservationService)->reserve($user->id, $token, $replayCart);
 $barrier = storage_path('framework/testing/last-replay-'.uniqid());
 $workers = [];
 for ($index = 0; $index < 2; $index++) {
