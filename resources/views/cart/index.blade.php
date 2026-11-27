@@ -42,9 +42,10 @@
                         <tr>
                             <td>
                                 <div class="d-flex align-items-center gap-3">
-                                    @if (!empty($item['image']))
+                                    @php($imageUrl = \App\Support\ProductImages::url($item['image'] ?? null))
+                                    @if ($imageUrl)
                                         <img
-                                            src="{{ asset('storage/' . $item['image']) }}"
+                                            src="{{ $imageUrl }}"
                                             alt="{{ $item['name'] }}"
                                             style="width:70px;height:70px;object-fit:cover"
                                             class="rounded"
@@ -209,6 +210,14 @@
                         <strong>Địa chỉ:</strong>
                         {{ $order->address }}
                     </p>
+
+                    @if ($order->voucher_code || \App\Support\Money::cents($order->discount_amount ?? '0.00') > 0)
+                        <p class="mb-1 text-success small">
+                            <strong>Mã giảm giá:</strong>
+                            <code>{{ $order->voucher_code ?? 'Voucher' }}</code>
+                            (−{{ \App\Support\Money::format($order->discount_amount) }} đ từ {{ \App\Support\Money::format($order->subtotal_amount) }} đ)
+                        </p>
+                    @endif
 
                     <p class="mb-3">
                         <strong>Tổng tiền:</strong>

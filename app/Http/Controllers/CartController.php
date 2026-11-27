@@ -102,7 +102,10 @@ class CartController extends Controller
 
         $total = Money::total($cart);
         session()->put('cart', $cart);
-        session()->forget('checkout_quote');
+        if ($quote = session('checkout_quote')) {
+            app(\App\Support\StockReservationService::class)->cancel(auth()->id(), $quote['version']);
+        }
+        session()->forget(['checkout_quote', 'checkout_voucher']);
 
         if ($request->expectsJson() || $request->ajax()) {
             $totalCount = array_sum(array_column($cart, 'quantity'));
@@ -173,7 +176,10 @@ class CartController extends Controller
 
         Money::total($cart);
         session()->put('cart', $cart);
-        session()->forget('checkout_quote');
+        if ($quote = session('checkout_quote')) {
+            app(\App\Support\StockReservationService::class)->cancel(auth()->id(), $quote['version']);
+        }
+        session()->forget(['checkout_quote', 'checkout_voucher']);
 
         return redirect()->route('cart.index')
             ->with('success', 'Đã cập nhật giỏ hàng.');
@@ -188,7 +194,10 @@ class CartController extends Controller
         unset($cart[$id]);
 
         session()->put('cart', $cart);
-        session()->forget('checkout_quote');
+        if ($quote = session('checkout_quote')) {
+            app(\App\Support\StockReservationService::class)->cancel(auth()->id(), $quote['version']);
+        }
+        session()->forget(['checkout_quote', 'checkout_voucher']);
 
         return redirect()->route('cart.index')
             ->with('success', 'Đã xóa sản phẩm khỏi giỏ hàng.');

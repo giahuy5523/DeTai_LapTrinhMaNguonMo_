@@ -40,8 +40,9 @@
                     <td>{{ $product->id }}</td>
                     <td>
                         <!-- Hiển thị ảnh upload -->
-                        @if($product->image)
-                        <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}" width="80" class="img-thumbnail">
+                        @php($imageUrl = \App\Support\ProductImages::url($product->image))
+                        @if($imageUrl)
+                        <img src="{{ $imageUrl }}" alt="{{ $product->name }}" width="80" class="img-thumbnail">
                         @else
                         <span class="text-muted">Không có ảnh</span>
                         @endif

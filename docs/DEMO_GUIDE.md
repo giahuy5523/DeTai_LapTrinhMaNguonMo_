@@ -1,90 +1,108 @@
-# Demo SneakerShop trên Windows
+# SneakerShop isolated demo
 
-Chuẩn bị một bản checkout riêng, PHP 8.3+ x64, Composer 2.11, MariaDB/MySQL
-và Chrome. PHP cần PDO MySQL, mbstring, OpenSSL, fileinfo và ZIP (hoặc 7-Zip
-cho Composer). Dùng `scripts/php.ps1` để chọn đúng PHP, kể cả khi XAMPP có PHP cũ.
+The demo database is a dedicated MariaDB instance, separate from the local
+SQLite preview and any application database:
 
-## Chuẩn bị và chạy
+- MariaDB data directory: `storage/app/gd3-mariadb-demo/data`
+- Loopback port: `33430`
+- Schema: `sneakershop_gd3_test`
+- App URL: `http://127.0.0.1:8025`
+- Local-only accounts: `admin@demo.test`, `customer1@demo.test`,
+  `customer2@demo.test`
+- Shared demo password (minimum 12 characters for `GD3_DEMO_PASSWORD`) and database root password are stored under
+  `storage/app/private/`; those files are ignored by Git.
 
-1. Khởi động MariaDB riêng trên loopback. Tạo schema `sneakershop_gd3_test` với
-   charset utf8mb4. Dùng trình SQL chạy `SELECT DATABASE(), @@port, @@datadir;`
-   sau khi chọn schema. Đối chiếu cả ba giá trị trước khi chạy migration.
-2. Trong checkout demo, tạo `.env` từ `.env.example` nếu chưa có. Đặt
-   `DB_CONNECTION=mysql`, `DB_HOST=127.0.0.1`, cổng instance demo (lần nghiệm
-   thu dùng 33430), `DB_DATABASE=sneakershop_gd3_test`, thông tin kết nối riêng,
-   `APP_URL=http://127.0.0.1:8024`, `SESSION_DRIVER=file` và
-   `SESSION_COOKIE=sneakershop_demo_session`. Kiểm tra các biến môi trường
-   `DB_*` của terminal nếu từng dùng terminal đó với dự án khác.
-3. Cài dependency bằng Composer 2.11 chạy trên PHP 8.3+. Với Composer PHAR,
-   dùng ` .\scripts\php.ps1 C:\ProgramData\ComposerSetup\bin\composer.phar install`.
-   Tạo `APP_KEY` một lần nếu đang trống. Tạo storage link nếu chưa có.
-4. Chạy các lệnh dưới đây. Chỉ tiếp tục khi mỗi lệnh thành công. Nhập mật khẩu
-   demo tự chọn ít nhất 12 ký tự ở prompt ẩn và lưu riêng để trình diễn.
+## Start the demo
+
+Start MariaDB in a hidden PowerShell process:
 
 ```powershell
-.\scripts\php.ps1 artisan config:clear
-.\scripts\php.ps1 artisan key:generate # Chỉ chạy nếu APP_KEY đang trống
-.\scripts\php.ps1 artisan storage:link # Chỉ chạy nếu chưa có public/storage
-$env:APP_ENV = 'testing'
-.\scripts\php.ps1 artisan migrate
-$env:GD3_DEMO_PASSWORD = [Net.NetworkCredential]::new('', (Read-Host 'Mật khẩu demo' -AsSecureString)).Password
-try {
-    .\scripts\php.ps1 artisan db:seed --class=Gd3DemoSeeder
-} finally {
-    Remove-Item Env:GD3_DEMO_PASSWORD
-}
-$env:APP_ENV = 'local'
-.\scripts\php.ps1 artisan serve --host=127.0.0.1 --port=8024 --no-reload
+$gd3MysqlIni = (Resolve-Path 'storage/app/gd3-mariadb-demo/my.ini').Path
+Start-Process -FilePath 'C:/xampp/mysql/bin/mysqld.exe' `
+  -ArgumentList "--defaults-file=$gd3MysqlIni", '--console' -WindowStyle Hidden
 ```
 
-Tài khoản Admin là `admin@gd3.example.test`. Hai Customer là
-`customer@gd3.example.test` và `customer2@gd3.example.test`. Seeder giữ nguyên
-mật khẩu, quyền và tồn kho của bản ghi đã có. Trước buổi demo, tạo hai sản phẩm
-đang bán, còn hàng, tên bắt đầu bằng **GD3 Sneaker Demo** trong danh mục
-**GD3 Sneakers**, qua form Admin. Cửa hàng cần hơn 12 kết quả còn hàng để có
-trang 2. Sản phẩm **GD3 Sneaker 12** hết hàng có thể xem tại Admin, vì cửa hàng
-lọc bỏ sản phẩm hết hàng.
+Create/confirm the dedicated schema on that instance:
 
-## Kịch bản trình diễn
+```powershell
+$gd3RootPassword = (Get-Content 'storage/app/private/gd3-mariadb-root-password.txt' -Raw).Trim()
+$env:MYSQL_PWD = $gd3RootPassword
+try {
+    & C:/xampp/mysql/bin/mariadb.exe --protocol=tcp --host=127.0.0.1 --port=33430 --user=root --execute="CREATE DATABASE IF NOT EXISTS sneakershop_gd3_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+} finally {
+    Remove-Item Env:MYSQL_PWD -ErrorAction SilentlyContinue
+    Remove-Variable gd3RootPassword -ErrorAction SilentlyContinue
+}
+```
 
-| # | Vai trò và trang | Thao tác → Kết quả mong đợi | Nếu gặp lỗi |
-| --- | --- | --- | --- |
-| 1 | Khách · `/` | Mở trang chủ → thấy ảnh và danh sách nổi bật | Kiểm tra server và storage link |
-| 2 | Khách · `/san-pham` | Mở danh sách → thấy sản phẩm đang bán và còn kho | Kiểm tra kết nối DB và tồn kho |
-| 3 | Khách · `/san-pham` | Tìm GD3 Sneaker rồi nhấp trang 2 → vẫn giữ từ khóa | Kiểm tra có trên 12 kết quả khả dụng |
-| 4 | Customer · `/login` | Đăng nhập tài khoản demo → vào cửa hàng | Dùng mật khẩu đã đặt tại lần seed đầu |
-| 5 | Customer · `/san-pham` | Thêm GD3 Sneaker 1 → badge giỏ tăng, có thông báo AJAX | Tải lại trang nếu phiên hoặc CSRF hết hạn |
-| 6 | Customer · `/gio-hang` | Đổi số lượng từ 1 thành 2 → tổng tiền cập nhật | Kiểm tra tồn kho và thông báo form |
-| 7 | Customer · `/checkout` | Nhập thông tin giả lập, chọn COD và đặt đơn → chuyển sang trang thành công | Mở lại checkout nếu xác nhận đã cũ |
-| 8 | Customer · `/checkout/thanh-cong` | Đọc mã đơn và tổng tiền → ghi mã để đối chiếu bên Admin | Kiểm tra lịch sử trước khi gửi lại |
-| 9 | Admin · `/login` | Đăng xuất Customer hoặc dùng cửa sổ riêng rồi đăng nhập Admin → mở dashboard | Kiểm tra đúng tài khoản Admin |
-| 10 | Admin · `/admin/orders` | Tìm mã đơn vừa ghi → thấy đơn đang chờ | Bỏ bộ lọc trạng thái đang áp dụng |
-| 11 | Admin · `/admin/orders` | Chọn đang xử lý rồi lưu → trạng thái đổi trên đúng đơn | Tải lại trang và kiểm tra trạng thái mới nhất |
-| 12 | Admin · `/admin/categories`, `/admin/products` | Tạo/sửa danh mục và sản phẩm thử, tải ảnh PNG/JPEG, xóa sản phẩm rồi xóa danh mục thử | Dùng tên riêng, kiểm tra định dạng và storage link |
-| 13 | Admin · `/admin/users` | Tìm Customer và mở form quyền → thấy các vai trò. Thử mở Admin bằng Customer → bị chặn | Kiểm tra phiên đăng nhập ở mỗi cửa sổ |
+Run migrations and the idempotent demo seeder against the isolated schema. Read
+the shared demo password from the ignored local credential file; do not paste it
+into a document or source file.
 
-Để minh họa validation, thử cập nhật giỏ với số lượng lớn hơn tồn kho. Form
-phải chặn hoặc báo lỗi và giỏ giữ số lượng hợp lệ. Có thể giới thiệu chuyển
-khoản demo ở checkout. Hệ thống hiển thị dữ liệu minh họa và không xác nhận
-tiền về hay thực hiện giao dịch ngân hàng.
+```powershell
+$gd3RootPassword = (Get-Content 'storage/app/private/gd3-mariadb-root-password.txt' -Raw).Trim()
+$gd3CredentialLine = Get-Content 'storage/app/private/demo-credentials.txt' | Where-Object { $_ -like 'Password shared:*' }
+$env:GD3_DEMO_PASSWORD = $gd3CredentialLine.Substring('Password shared: '.Length)
+$env:APP_ENV = 'testing'
+$env:DB_CONNECTION = 'mysql'
+$env:DB_HOST = '127.0.0.1'
+$env:DB_PORT = '33430'
+$env:DB_DATABASE = 'sneakershop_gd3_test'
+$env:DB_USERNAME = 'root'
+$env:DB_PASSWORD = $gd3RootPassword
+try {
+    .\scripts/php.ps1 artisan migrate --force
+    .\scripts/php.ps1 artisan db:seed --class=Gd3DemoSeeder --force
+} finally {
+    Remove-Item Env:GD3_DEMO_PASSWORD, Env:APP_ENV, Env:DB_CONNECTION, Env:DB_HOST, Env:DB_PORT, Env:DB_DATABASE, Env:DB_USERNAME, Env:DB_PASSWORD -ErrorAction SilentlyContinue
+    Remove-Variable gd3RootPassword, gd3CredentialLine, gd3MysqlIni -ErrorAction SilentlyContinue
+}
+```
 
-## Chạy lần sau
+Serve the app with the demo DB in the same PowerShell terminal:
 
-Dùng lại instance và thư mục dữ liệu demo, chạy `migrate:status`, kiểm tra đăng
-nhập, ảnh, giỏ trống và sản phẩm trình diễn còn ít nhất hai đôi. Seeder có thể
-bổ sung mục thiếu, nhưng không đặt lại đơn, quyền, mật khẩu hoặc tồn kho hiện có.
-Nếu cần một lần diễn tập sạch, giữ nguyên instance cũ và chuẩn bị thư mục
-dữ liệu MariaDB mới trên cổng khác với cùng tên schema. Chọn cổng mới trong
-checkout demo rồi chạy quy trình chuẩn bị từ đầu. Với lỗi ảnh, kiểm tra
-`public/storage` trỏ tới `storage/app/public` của đúng checkout.
+```powershell
+$gd3RootPassword = (Get-Content 'storage/app/private/gd3-mariadb-root-password.txt' -Raw).Trim()
+$env:APP_ENV = 'local'
+$env:APP_URL = 'http://127.0.0.1:8025'
+$env:DB_CONNECTION = 'mysql'
+$env:DB_HOST = '127.0.0.1'
+$env:DB_PORT = '33430'
+$env:DB_DATABASE = 'sneakershop_gd3_test'
+$env:DB_USERNAME = 'root'
+$env:DB_PASSWORD = $gd3RootPassword
+$env:SESSION_DRIVER = 'file'
+$env:SESSION_COOKIE = 'sneakershop_gd3_demo_session'
+.\scripts/php.ps1 artisan serve --host=127.0.0.1 --port=8025 --no-reload
+```
 
-## Diễn tập trên Windows
+## Demo checklist
 
-Đã chạy trên PHP 8.3.33, Laravel 12.71.0, MariaDB 10.4.32 và Chrome 157.
-Cả 12 migration đã chạy. Sau khi bổ sung hai sản phẩm trong schema demo,
-cửa hàng có 13 sản phẩm đang bán và còn hàng. Chrome tải được ảnh trang chủ
-và cả sáu nhóm kiểm thử đã đạt, gồm tìm kiếm/phân trang, đăng nhập, giỏ AJAX
-và validation, checkout, quyền Admin và CRUD có thay ảnh. Đơn COD số 2 chuyển
-từ đang chờ sang đang xử lý, tổng tiền 1.210.000 đồng. Đơn chuyển khoản số 1
-còn đang chờ. Cả hai là dữ liệu diễn tập. Bước cập nhật giỏ và bước checkout
-được xác minh bằng hai tài khoản Customer khác nhau.
+| Step | Role and page | Action and expected result |
+| --- | --- | --- |
+| 1 | Guest · `/` | View the storefront, hero, and featured products (all bundled shoe photos load cleanly). |
+| 2 | Guest · `/san-pham` | Search for `GD3 Sneaker`; page 2 keeps the search term and shows 13 available shoes. |
+| 3 | Customer 1 · `/login` | Sign in, add `GD3 Sneaker 1` via AJAX, and see the cart badge & toast update. |
+| 4 | Customer 1 · `/gio-hang` | Change quantity to 2; subtotal updates from server data (`2.420.000 đ`). |
+| 5 | Customer 1 · `/checkout` | Place a normal COD order and confirm the order appears in purchase history. |
+| 6 | Customer 2 · `/login` and `/checkout` | Sign in separately, place a second normal COD order, and confirm account histories stay separate. |
+| 7 | Admin · `/login` | Sign in and open `/admin/vouchers`; review seed vouchers `DEMO10` (`0 / 1`) and `DEMO50K` (`0 / 20`). |
+| 8 | Admin · `/admin/vouchers` | Create a percentage voucher without a cap (validation error), then create one with a cap (`REHEARSE15`). |
+| 9 | Admin · `/admin/vouchers` | Try a duplicate code with different letter case (`ReHeArSe15`); it is rejected after normalization. |
+| 10 | Admin · `/admin/vouchers` | Edit dates/status and limit, then confirm the list reflects the changes. |
+| 11 | Admin · `/admin/users` | Open a Customer's details; see order count, completed-order total, voucher discount, and purchase history. |
+| 12 | Guest/customer/admin · any page | Verify the role-specific navigation and that logout appears before the greeting. |
+| 13 | Customer 1 · `/checkout` (QR + `DEMO10`) | Apply `demo10` (normalized to `DEMO10`, preview does not increment usage), scan ISO/IEC 18004 QR showing discounted demo payload, confirm simulated QR order; Admin shows `1 / 1` (`Hết lượt`). |
+| 14 | Customer 2 & Admin · Voucher limits & deletion | Customer 2 is rejected on exhausted `DEMO10`, checks out with another voucher; Admin deletes the voucher and existing orders keep `voucher_code` & `discount_amount` snapshot. |
+| 15 | Customer 1 & Customer 2 · Last unit & 5-min expiry | Account 1 holds the last unit (`quantity = 1`), Account 2 is blocked; after 5-min expiry, clear red notice + **Quay về giỏ hàng** button appear, late POST is rejected, and Account 2 claims the released unit. |
+| 16 | Multi-process concurrency (`tests/manual/voucher-concurrency.php`) | Two concurrent PHP workers race on a `usage_limit = 1` voucher across 3 rounds: every round returns `['accepted', 'rejected']`, `used_count = 1`, stock conserved before & after cancellation. |
+| 17 | SQL integrity audit (`tests/manual/data-integrity-audit.php`) | All 9 invariants (including `subtotal_amount - discount_amount = total_amount` and `used_count <= usage_limit`) return **0 violations**. |
+
+The seeded products include 13 available shoes, one out-of-stock shoe, and one
+inactive shoe. `DEMO10` is limited to one successful order; cancellations do not
+restore its use. `DEMO50K` is a fixed-amount example. Checkout voucher
+integration (`App\Support\VoucherService`, `POST /checkout/voucher`,
+`DELETE /checkout/voucher`, `POST /checkout`) is now complete and verified end-to-end;
+see `docs/VOUCHER_HANDOFF.md` and the latest rehearsal report in
+`docs/DEMO_REHEARSAL_RESULT.md`. Database passwords and the shared demo login
+password stay in ignored local files only.

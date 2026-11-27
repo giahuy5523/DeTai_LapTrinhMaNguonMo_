@@ -51,8 +51,9 @@ class GiaHuyPhaseThreeTest extends TestCase
         $product = $this->product();
         $this->post(route('cart.add', $product->id), ['quantity' => 2]);
         $product->update(['price' => 150000]);
+        $fields = $this->receiver();
 
-        $this->post(route('checkout.store'), $this->receiver())
+        $this->post(route('checkout.store'), $fields)
             ->assertRedirect(route('checkout.success'))->assertSessionMissing('cart');
 
         $this->assertDatabaseHas('orders', ['total_amount' => 300000]);
@@ -68,9 +69,10 @@ class GiaHuyPhaseThreeTest extends TestCase
         foreach ([$first, $second] as $product) {
             $this->post(route('cart.add', $product->id), ['quantity' => 2]);
         }
+        $fields = $this->receiver();
         $second->update(['is_active' => false]);
 
-        $this->post(route('checkout.store'), $this->receiver())
+        $this->post(route('checkout.store'), $fields)
             ->assertSessionHasErrors('cart')->assertSessionHas('cart');
 
         $this->assertDatabaseCount('orders', 0);
@@ -84,9 +86,10 @@ class GiaHuyPhaseThreeTest extends TestCase
         $this->actingAs(User::factory()->create(['role' => 'customer']));
         $product = $this->product();
         $this->post(route('cart.add', $product->id), ['quantity' => 1]);
+        $fields = $this->receiver();
         $product->delete();
 
-        $this->post(route('checkout.store'), $this->receiver())
+        $this->post(route('checkout.store'), $fields)
             ->assertSessionHasErrors('cart')->assertSessionHas('cart');
         $this->assertDatabaseCount('orders', 0);
     }

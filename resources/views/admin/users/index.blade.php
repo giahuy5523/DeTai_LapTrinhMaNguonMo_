@@ -29,6 +29,9 @@
                     <td>{{ $user->created_at?->format('d/m/Y H:i') }}</td>
                     <td class="text-nowrap">
                         <a class="btn btn-sm btn-warning" href="{{ route('admin.users.edit', $user) }}">Sửa</a>
+                        @if($user->role === 'customer')
+                            <a class="btn btn-sm btn-info" href="{{ route('admin.users.show', $user) }}">Chi tiết</a>
+                        @endif
                         @if(!$user->is(auth()->user()))
                             <form class="d-inline" method="POST" action="{{ route('admin.users.destroy', $user) }}" onsubmit="return confirm('Bạn có chắc muốn xóa tài khoản này?')">
                                 @csrf @method('DELETE')

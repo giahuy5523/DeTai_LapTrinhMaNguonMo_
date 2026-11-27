@@ -70,7 +70,7 @@ Set-Location public
 & ..\storage\app\php83\php.exe -S 127.0.0.1:8023 ..\vendor\laravel\framework\src\Illuminate\Foundation\resources\server.php
 ```
 
-Tài khoản demo: `admin@gd3.example.test`, `customer@gd3.example.test`, `customer2@gd3.example.test`.
+Tài khoản demo: `admin@demo.test`, `customer1@demo.test`, `customer2@demo.test`.
 Seed lại giữ nguyên tài khoản, role, mật khẩu và sản phẩm hiện có; không reset tồn kho.
 Đặt và lưu mật khẩu demo cục bộ. Xem [hướng dẫn chạy demo trên Windows](docs/DEMO_GUIDE.md).
 Dữ liệu demo có sản phẩm còn hàng, hết hàng, ngừng bán và ảnh minh họa tự tạo.

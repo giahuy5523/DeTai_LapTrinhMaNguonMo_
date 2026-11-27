@@ -131,7 +131,7 @@ class SessionAndAliasRetestTest extends TestCase
         $this->actingAs(User::factory()->create(['role' => 'customer']));
         $product = $this->shoe();
         $this->withSession(['cart' => [$product->id => ['quantity' => 3], '0'.$product->id => ['quantity' => 3]]]);
-        $this->post('/checkout', $this->checkoutFields($this->receiver()))->assertSessionHasErrors('cart');
+        $this->get('/checkout')->assertRedirect(route('cart.index'))->assertSessionHasErrors('cart');
         $this->assertDatabaseCount('orders', 0);
         $this->assertSame(5, $product->fresh()->quantity);
         $this->patch('/gio-hang/cap-nhat/0'.$product->id, ['quantity' => 5])->assertRedirect('/gio-hang');

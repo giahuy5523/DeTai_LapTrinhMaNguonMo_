@@ -70,8 +70,8 @@ Các ca quyền riêng tư đơn, sản phẩm bị xóa, rollback nhiều sản
    ```
 
    `storage:link` chỉ cần khi liên kết chưa tồn tại. Không dùng config cache của DB ứng dụng.
-   Tài khoản: `admin@gd3.example.test`, `customer@gd3.example.test`,
-   `customer2@gd3.example.test`. Seed lại giữ nguyên bản ghi hiện có, không reset stock/mật khẩu.
+   Tài khoản: `admin@demo.test`, `customer1@demo.test`,
+   `customer2@demo.test`. Seed lại giữ nguyên bản ghi hiện có, không reset stock/mật khẩu.
    Dữ liệu demo gồm 13 sản phẩm, một sản phẩm hết hàng và một sản phẩm ngừng bán.
    Đơn demo được tạo bằng luồng checkout, không ghi cứng lịch sử đặt hàng trong seeder.
 

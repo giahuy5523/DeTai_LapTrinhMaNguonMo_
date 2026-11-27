@@ -55,21 +55,18 @@ class SessionLifecycleRetestTest extends TestCase
         $this->get('/gio-hang')->assertRedirect('/login');
     }
 
-    public function test_two_checkout_tabs_reject_stale_confirmation_without_consuming_latest(): void
+    public function test_two_checkout_tabs_reuse_reservation_and_only_decrement_once(): void
     {
         $product = $this->prepare();
         $first = $this->checkoutFields($this->receiver());
         $second = $this->checkoutFields($this->receiver());
-        $this->assertNotSame($first['checkout_version'], $second['checkout_version']);
-        $this->post('/checkout', $first)->assertSessionHasErrors('cart');
-        $this->assertDatabaseCount('orders', 0);
-        $this->assertSame(5, $product->fresh()->quantity);
-        $this->assertSame($second['checkout_version'], session('checkout_quote.version'));
-        $this->post('/checkout', $second)->assertRedirect(route('checkout.success'));
+        $this->assertSame($first['checkout_version'], $second['checkout_version']);
+        $this->assertDatabaseCount('stock_reservations', 1);
+        $this->post('/checkout', $first)->assertRedirect(route('checkout.success'));
+        $this->post('/checkout', $second)->assertRedirect();
         $this->assertDatabaseCount('orders', 1);
         $this->assertSame(4, $product->fresh()->quantity);
     }
-
     public function test_cart_change_in_another_tab_invalidates_both_old_forms(): void
     {
         $product = $this->prepare();

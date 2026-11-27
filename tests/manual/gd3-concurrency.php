@@ -39,8 +39,13 @@ if (($argv[1] ?? '') === 'worker') {
     try {
         if ($operation === 'checkout') {
             session()->put('cart', [$targetId => ['quantity' => 1, 'price' => 1]]);
+            $checkoutResponse = (new CheckoutController)->index();
+            if ($checkoutResponse instanceof \Illuminate\Http\RedirectResponse) {
+                echo 'rejected';
+                exit;
+            }
             $request = Request::create('/checkout', 'POST', [
-                'checkout_version' => (new CheckoutController)->index()->getData()['checkoutVersion'], 'customer_name' => 'GD3 concurrent', 'phone' => '0900000000',
+                'checkout_version' => $checkoutResponse->getData()['checkoutVersion'], 'customer_name' => 'GD3 concurrent', 'phone' => '0900000000',
                 'address' => 'GD3 test address', 'payment_method' => 'cod',
             ]);
             (new CheckoutController)->store($request);
@@ -109,7 +114,7 @@ function race(string $operation, array $users, int $targetId): array
 }
 
 $category = Category::firstOrCreate(['slug' => 'gd3-concurrency'], ['name' => 'GD3 concurrency']);
-$users = User::whereIn('email', ['customer@gd3.example.test', 'customer2@gd3.example.test'])->get();
+$users = User::whereIn('email', ['customer1@demo.test', 'customer2@demo.test'])->get();
 if ($users->count() !== 2) {
     throw new RuntimeException('Set up the two GD3 customer accounts first.');
 }

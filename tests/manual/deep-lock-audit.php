@@ -51,13 +51,14 @@ if (($argv[1] ?? '') === 'worker') {
         if (in_array($operation, ['checkout', 'replay'], true)) {
             [$idsString, $sharedToken] = array_pad(explode('@', $target, 2), 2, null);
             $ids = explode(',', $idsString);
-            session()->put('cart', array_fill_keys($ids, ['quantity' => 1]));
-            $version = (new CheckoutController)->index()->getData()['checkoutVersion'];
             if ($sharedToken) {
-                $quote = session('checkout_quote');
-                $quote['version'] = $sharedToken;
-                session()->put('checkout_quote', $quote);
+                $cart = \App\Support\CartSnapshot::refresh(array_fill_keys($ids, ['quantity' => 1]));
+                session()->put('cart', $cart);
+                session()->put('checkout_quote', ['version' => $sharedToken, 'snapshot' => \App\Support\CartSnapshot::version($cart)]);
                 $version = $sharedToken;
+            } else {
+                session()->put('cart', array_fill_keys($ids, ['quantity' => 1]));
+                $version = (new CheckoutController)->index()->getData()['checkoutVersion'];
             }
             (new CheckoutController)->store(Request::create('/checkout', 'POST', ['checkout_version' => $version, 'customer_name' => 'Deep lock audit', 'phone' => '0900000000', 'address' => 'Audit address', 'payment_method' => 'cod']));
         } elseif ($operation === 'admincancel') {
@@ -107,7 +108,7 @@ $products = [];
 for ($i = 0; $i < 2; $i++) {
     $products[] = Product::create(['category_id' => $cat->id, 'name' => 'Deep lock '.uniqid(), 'slug' => 'deep-lock-'.uniqid(), 'price' => 100000, 'quantity' => 5, 'is_active' => true]);
 }
-$users = User::whereIn('email', ['customer@gd3.example.test', 'customer2@gd3.example.test'])->get();
+$users = User::whereIn('email', ['customer1@demo.test', 'customer2@demo.test'])->get();
 $result = race([['checkout', $users[0]->id, $products[0]->id.','.$products[1]->id], ['checkout', $users[1]->id, $products[1]->id.','.$products[0]->id]]);
 echo json_encode(['case' => 'reverse_product_lock_order', 'workers' => $result]).PHP_EOL;
 if (array_column($result, 'result') !== ['accepted', 'accepted']) {
@@ -120,7 +121,7 @@ if ($orders->count() !== 2) {
 }
 
 $order = $orders->first();
-$admin = User::where('email', 'admin@gd3.example.test')->firstOrFail();
+$admin = User::where('email', 'admin@demo.test')->firstOrFail();
 $result = race([['admincancel', $admin->id, $order->id], ['cancel', $order->user_id, $order->id]]);
 if (count(array_filter($result, fn ($worker) => $worker['result'] === 'accepted')) !== 1
     || $order->fresh()->status !== 'cancelled'
@@ -136,6 +137,8 @@ foreach ($orders as $remaining) {
 }
 
 $sharedToken = bin2hex(random_bytes(32));
+$replayCart = \App\Support\CartSnapshot::refresh([$products[0]->id => ['quantity' => 1]]);
+(new \App\Support\StockReservationService)->reserve($users[0]->id, $sharedToken, $replayCart);
 $target = $products[0]->id.'@'.$sharedToken;
 $replay = race([['replay', $users[0]->id, $target], ['replay', $users[0]->id, $target]]);
 if (array_column($replay, 'result') !== ['accepted', 'accepted']

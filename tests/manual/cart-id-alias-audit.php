@@ -22,7 +22,7 @@ $app->make(Kernel::class)->bootstrap();
 if (DB::selectOne('SELECT DATABASE() AS db')->db !== 'sneakershop_gd3_test') {
     throw new RuntimeException('Unsafe database');
 }
-auth()->setUser(User::where('email', 'customer@gd3.example.test')->firstOrFail());
+auth()->setUser(User::where('email', 'customer1@demo.test')->firstOrFail());
 session()->forget(['cart', 'checkout_quote', 'last_checkout_order_id']);
 DB::beginTransaction();
 try {

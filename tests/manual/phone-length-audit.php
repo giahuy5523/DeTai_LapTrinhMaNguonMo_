@@ -21,7 +21,7 @@ $app->make(Kernel::class)->bootstrap();
 if (DB::selectOne('SELECT DATABASE() AS db')->db !== 'sneakershop_gd3_test') {
     throw new RuntimeException('Unsafe database');
 }
-auth()->setUser(User::where('email', 'customer@gd3.example.test')->firstOrFail());
+auth()->setUser(User::where('email', 'customer1@demo.test')->firstOrFail());
 $columnLength = DB::selectOne("SELECT CHARACTER_MAXIMUM_LENGTH AS max_length FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'orders' AND COLUMN_NAME = 'phone'")->max_length;
 $results = [];
 foreach ([20, 21] as $length) {

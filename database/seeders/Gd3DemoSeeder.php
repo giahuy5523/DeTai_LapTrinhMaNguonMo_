@@ -5,6 +5,8 @@ namespace Database\Seeders;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\User;
+use App\Models\Voucher;
+use App\Support\ProductImages;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -25,32 +27,56 @@ class Gd3DemoSeeder extends Seeder
             throw new RuntimeException('Đặt GD3_DEMO_PASSWORD tối thiểu 12 ký tự; không ghi mật khẩu vào Git.');
         }
         // Validate existing identities before creating anything; never promote a user.
-        foreach (['admin', 'customer', 'customer2'] as $name) {
-            $user = User::where('email', $name.'@gd3.example.test')->first();
-            $role = $name === 'admin' ? 'admin' : 'customer';
-            if ($user && $user->role !== $role) {
+        $accounts = [
+            'admin@demo.test' => ['name' => 'Demo Admin', 'role' => 'admin'],
+            'customer1@demo.test' => ['name' => 'Demo Customer 1', 'role' => 'customer'],
+            'customer2@demo.test' => ['name' => 'Demo Customer 2', 'role' => 'customer'],
+        ];
+        foreach ($accounts as $email => $account) {
+            $user = User::where('email', $email)->first();
+            if ($user && $user->role !== $account['role']) {
                 throw new RuntimeException('Tài khoản demo có role khác; không tự thay đổi quyền.');
             }
         }
-        DB::transaction(function () use ($password) {
-            foreach (['admin', 'customer', 'customer2'] as $name) {
-                User::firstOrCreate(['email' => $name.'@gd3.example.test'], [
-                    'name' => 'GD3 '.$name, 'role' => $name === 'admin' ? 'admin' : 'customer',
+        DB::transaction(function () use ($password, $accounts) {
+            foreach ($accounts as $email => $account) {
+                User::firstOrCreate(['email' => $email], [
+                    'name' => $account['name'], 'role' => $account['role'],
                     'password' => Hash::make($password),
                 ]);
             }
             $category = Category::firstOrCreate(['slug' => 'gd3-sneakers'], ['name' => 'GD3 Sneakers']);
-            for ($i = 1; $i <= 13; $i++) {
-                $image = 'products/gd3-demo-'.$i.'.svg';
-                if (! Storage::disk('public')->put($image, file_get_contents(public_path('images/demo-sneaker.svg')))) {
+            $demoFiles = ProductImages::demoFiles();
+            for ($i = 1; $i <= 15; $i++) {
+                $sourceFile = $demoFiles[($i - 1) % count($demoFiles)];
+                $sourcePath = public_path('images/products/'.$sourceFile);
+                $contents = is_file($sourcePath) ? file_get_contents($sourcePath) : false;
+                $image = 'products/gd3-demo-'.$i.'.jpg';
+                if ($contents === false || ! Storage::disk('public')->put($image, $contents)) {
                     throw new RuntimeException('Không lưu được ảnh demo.');
                 }
-                Product::firstOrCreate(['slug' => 'gd3-sneaker-'.$i], [
+                $product = Product::firstOrCreate(['slug' => 'gd3-sneaker-'.$i], [
                     'category_id' => $category->id, 'name' => 'GD3 Sneaker '.$i,
                     'price' => 1200000 + $i * 10000, 'quantity' => $i === 12 ? 0 : 10,
                     'is_active' => $i !== 13, 'image' => $image,
                 ]);
+                if (str_ends_with((string) $product->image, '.svg')) {
+                    $product->update(['image' => $image]);
+                }
             }
+
+            Voucher::firstOrCreate(['code' => 'DEMO10'], [
+                'discount_type' => 'percentage', 'discount_value' => '10.00',
+                'max_discount_amount' => '150000.00', 'minimum_order_amount' => '500000.00',
+                'usage_limit' => 1, 'starts_at' => now()->subDay(), 'ends_at' => now()->addDays(30),
+                'is_active' => true,
+            ]);
+            Voucher::firstOrCreate(['code' => 'DEMO50K'], [
+                'discount_type' => 'fixed', 'discount_value' => '50000.00',
+                'max_discount_amount' => null, 'minimum_order_amount' => '0.00',
+                'usage_limit' => 20, 'starts_at' => now()->subDay(), 'ends_at' => now()->addDays(30),
+                'is_active' => true,
+            ]);
         });
     }
 }

@@ -4,11 +4,12 @@
     <aside class="col-lg-3">
         <div class="card border-0 p-3">
             <p class="small text-muted text-uppercase mb-2">Khu vực quản trị</p>
-            <nav class="nav flex-column admin-nav" aria-label="Menu quản trị">
+            <button class="btn btn-outline-dark d-lg-none mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#adminMenu" aria-expanded="false" aria-controls="adminMenu">Menu quản trị</button><nav id="adminMenu" class="collapse d-lg-flex nav flex-column admin-nav" aria-label="Menu quản trị">
                 <a class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" href="{{ route('admin.dashboard') }}">Tổng quan</a>
                 <a class="nav-link {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}" href="{{ route('admin.categories.index') }}">Danh mục</a>
                 <a class="nav-link {{ request()->routeIs('admin.products.*') ? 'active' : '' }}" href="{{ route('admin.products.index') }}">Sản phẩm</a>
                 <a class="nav-link {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}" href="{{ route('admin.orders.index') }}">Đơn hàng</a>
+                <a class="nav-link {{ request()->routeIs('admin.vouchers.*') ? 'active' : '' }}" href="{{ route('admin.vouchers.index') }}">Voucher</a>
                 <a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}">Tài khoản</a>
                 <a class="nav-link" href="{{ route('home') }}">← Về cửa hàng</a>
             </nav>
