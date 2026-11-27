@@ -109,7 +109,7 @@
                 <article class="card product-card h-100">
                     <a href="{{ route('store.show', ['product' => $product->slug]) }}" class="text-decoration-none" aria-label="Xem chi tiết {{ $product->name }}">
                         @if($product->image)
-                            <img src="{{ \\App\\Support\\ProductImages::url($product->image) }}" class="card-img-top product-image" alt="{{ $product->name }}" loading="lazy">
+                            <img src="{{ \App\Support\ProductImages::url($product->image) }}" class="card-img-top product-image" alt="{{ $product->name }}" loading="lazy">
                         @else
                             <div class="product-image d-flex align-items-center justify-content-center text-muted">Chưa có ảnh sản phẩm</div>
                         @endif

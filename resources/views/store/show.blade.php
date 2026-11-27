@@ -20,7 +20,7 @@
             <div class="card border-0 shadow-sm">
                 @if($product->image)
                     <img
-                        src="{{ \\App\\Support\\ProductImages::url($product->image) }}"
+                        src="{{ \App\Support\ProductImages::url($product->image) }}"
                         class="img-fluid w-100 rounded"
                         alt="{{ $product->name }}"
                         style="max-height: 520px; object-fit: contain;"
@@ -147,7 +147,7 @@
                             <a href="{{ route('store.show', ['product' => $related->slug]) }}">
                                 @if($related->image)
                                     <img
-                                        src="{{ \\App\\Support\\ProductImages::url($related->image) }}"
+                                        src="{{ \App\Support\ProductImages::url($related->image) }}"
                                         class="card-img-top"
                                         alt="{{ $related->name }}"
                                         style="height: 200px; object-fit: contain;"
