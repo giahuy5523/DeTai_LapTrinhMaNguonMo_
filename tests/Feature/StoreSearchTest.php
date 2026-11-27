@@ -39,8 +39,8 @@ class StoreSearchTest extends TestCase
         $response = $this->get(route('store.index', ['keyword' => 'Nike']))
             ->assertOk()
             ->assertSee('value="Nike"', false)
-            ->assertSee('Tìm thấy 2 sản phẩm phù hợp')
-            ->assertSee('Xóa tìm kiếm')
+            ->assertSee('2 sản phẩm phù hợp')
+            ->assertSee('Xóa bộ lọc')
             ->assertSee('Nike Air Max')
             ->assertSee('Nike Zoom')
             ->assertDontSee('Adidas Forum')
@@ -73,7 +73,7 @@ class StoreSearchTest extends TestCase
 
         $this->get(route('store.index', ['keyword' => 'Converse']))
             ->assertOk()
-            ->assertSee('Không tìm thấy sản phẩm phù hợp với từ khóa')
+            ->assertSee('Không tìm thấy sản phẩm phù hợp')
             ->assertSee('Xem tất cả sản phẩm');
     }
 
